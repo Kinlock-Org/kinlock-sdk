@@ -1,0 +1,14 @@
+# Local Postgres for indexer development. Not for deployed environments.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: kinlock
+      POSTGRES_PASSWORD: kinlock
+      POSTGRES_DB: kinlock
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

@@ -1,0 +1,8 @@
+# Illustrative: teams are created in roadmap F-12. Replace handles as needed.
+*                                          @Kinlock-Org/maintainers
+/packages/sdk/src/links.ts                 @Kinlock-Org/maintainers @Kinlock-Org/contract-reviewers
+/packages/sdk/src/hash.ts                  @Kinlock-Org/maintainers @Kinlock-Org/contract-reviewers
+/packages/sdk/src/receipts.ts              @Kinlock-Org/maintainers @Kinlock-Org/contract-reviewers
+/packages/sdk/src/preflight.ts             @Kinlock-Org/maintainers @Kinlock-Org/contract-reviewers
+/services/indexer/src/ingest/**            @Kinlock-Org/maintainers @Kinlock-Org/contract-reviewers
+/services/indexer/src/db/migrations/**     @Kinlock-Org/maintainers @Kinlock-Org/contract-reviewers
