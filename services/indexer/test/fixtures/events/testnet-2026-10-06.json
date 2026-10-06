@@ -1,0 +1,689 @@
+{
+  "source": "Stellar testnet RPC getEvents (xdrFormat=json), contract CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI, recorded 2026-10-06",
+  "events": [
+    {
+      "type": "contract",
+      "ledger": 5052340,
+      "ledgerClosedAt": "2026-10-06T11:14:47Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021699635068321792-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 12,
+      "txHash": "e8138573de3cb82977c5a92e3e0f9ff3e00272de3b2fd3060b89c29b31eb8685",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payee_registered"
+        },
+        {
+          "bytes": "4485665bae55d2562f20ad82cec50c8aaa99ddf613b982509711a6b474ded0ba"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "attester"
+            },
+            "val": {
+              "address": "GCZRNEOGZH7FVJTA4OQN2YQ5LMS7LSV2GP7PWJFC73SMSLPA56DRAPQT"
+            }
+          },
+          {
+            "key": {
+              "symbol": "category"
+            },
+            "val": {
+              "vec": [
+                {
+                  "symbol": "School"
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "symbol": "meta_hash"
+            },
+            "val": {
+              "bytes": "4c62af9d86c73d0a0f3733c76741ae1d1206e439daf7d1ee7fa0d4f167b8ed24"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payout"
+            },
+            "val": {
+              "address": "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5052342,
+      "ledgerClosedAt": "2026-10-06T11:14:57Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021699643658272768-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 16,
+      "txHash": "0ecf41bf837252ffccde87951a54f8ac9c586360a397fc1bfd705054d18df45b",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payee_registered"
+        },
+        {
+          "bytes": "3e7236118c83eb3bd37927155be21cc90ada773aaca86380d28cea5f712be2f1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "attester"
+            },
+            "val": {
+              "address": "GCZRNEOGZH7FVJTA4OQN2YQ5LMS7LSV2GP7PWJFC73SMSLPA56DRAPQT"
+            }
+          },
+          {
+            "key": {
+              "symbol": "category"
+            },
+            "val": {
+              "vec": [
+                {
+                  "symbol": "School"
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "symbol": "meta_hash"
+            },
+            "val": {
+              "bytes": "b91bbf10a4b5ac34c0ff345817423cbf8ade78ecf9bf27fe50f2cc91ebc135b6"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payout"
+            },
+            "val": {
+              "address": "GDPUY733T3UNZWG4EQMEBHBDGKD33YSFPOI2RB4AIK2JMOENKEXWK7ZG"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5052344,
+      "ledgerClosedAt": "2026-10-06T11:15:07Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021699652248186880-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 11,
+      "txHash": "5627c5063e14686b2179a6fd03be82ed480f0d889c7a6d9f22fb64e7d1713aa9",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payee_registered"
+        },
+        {
+          "bytes": "a7815d079f7663968e7ce11c3765009a09c5daccb4a123a9102d3f7567d43866"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "attester"
+            },
+            "val": {
+              "address": "GCZRNEOGZH7FVJTA4OQN2YQ5LMS7LSV2GP7PWJFC73SMSLPA56DRAPQT"
+            }
+          },
+          {
+            "key": {
+              "symbol": "category"
+            },
+            "val": {
+              "vec": [
+                {
+                  "symbol": "Rent"
+                }
+              ]
+            }
+          },
+          {
+            "key": {
+              "symbol": "meta_hash"
+            },
+            "val": {
+              "bytes": "a996b3699f3a43336d4d5b8702adccbca7cc5025f47010dacccd9e8b458853aa"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payout"
+            },
+            "val": {
+              "address": "GBXKOYQ4MJ6UJGQBFXVXOP7XL7SKKJTFTYJUSNREP5FW4IHXPMWY2WSX"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055169,
+      "ledgerClosedAt": "2026-10-06T15:10:32Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711785530793984-0000000001",
+      "operationIndex": 0,
+      "transactionIndex": 10,
+      "txHash": "62cb000d274f1570f6eb9a4fe33a39bc8d2ac46ba6d80b5e6ebb89977de032c0",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "lock_created"
+        },
+        {
+          "u64": "1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "expires_at"
+            },
+            "val": {
+              "u64": "1791306618"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payee_id"
+            },
+            "val": {
+              "bytes": "4485665bae55d2562f20ad82cec50c8aaa99ddf613b982509711a6b474ded0ba"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payout"
+            },
+            "val": {
+              "address": "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM"
+            }
+          },
+          {
+            "key": {
+              "symbol": "ref_hash"
+            },
+            "val": {
+              "bytes": "dee2634ab9acdbfff6fe5c0595fcda66c0897d1c6968c290745da4f384e3ee5e"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          },
+          {
+            "key": {
+              "symbol": "sender"
+            },
+            "val": {
+              "address": "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH3"
+            }
+          },
+          {
+            "key": {
+              "symbol": "token"
+            },
+            "val": {
+              "address": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+            }
+          },
+          {
+            "key": {
+              "symbol": "total"
+            },
+            "val": {
+              "i128": "100000000"
+            }
+          },
+          {
+            "key": {
+              "symbol": "tranche_count"
+            },
+            "val": {
+              "u32": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055171,
+      "ledgerClosedAt": "2026-10-06T15:10:42Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711794120744960-0000000001",
+      "operationIndex": 0,
+      "transactionIndex": 14,
+      "txHash": "7aa6c2a48f52072e8db94c9211f9d4ad5dbd1107eb792140194dc2c2ecc8d3bc",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "released"
+        },
+        {
+          "u64": "1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "amount"
+            },
+            "val": {
+              "i128": "50000000"
+            }
+          },
+          {
+            "key": {
+              "symbol": "idx"
+            },
+            "val": {
+              "u32": 0
+            }
+          },
+          {
+            "key": {
+              "symbol": "payout"
+            },
+            "val": {
+              "address": "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055174,
+      "ledgerClosedAt": "2026-10-06T15:10:57Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711807005634560-0000000001",
+      "operationIndex": 0,
+      "transactionIndex": 11,
+      "txHash": "ef7eb7ca23d996b789ace7ca8448002666bdde25d53d33a3fe6b3fe602b658ae",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "declined"
+        },
+        {
+          "u64": "1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "amount"
+            },
+            "val": {
+              "i128": "50000000"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055185,
+      "ledgerClosedAt": "2026-10-06T15:11:52Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711854250262528-0000000001",
+      "operationIndex": 0,
+      "transactionIndex": 8,
+      "txHash": "82c270d9311cb6b0084e379765f780a78cab098d4748429fd4dbaea8459b5491",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "lock_created"
+        },
+        {
+          "u64": "2"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "expires_at"
+            },
+            "val": {
+              "u64": "1791303213"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payee_id"
+            },
+            "val": {
+              "bytes": "a7815d079f7663968e7ce11c3765009a09c5daccb4a123a9102d3f7567d43866"
+            }
+          },
+          {
+            "key": {
+              "symbol": "payout"
+            },
+            "val": {
+              "address": "GBXKOYQ4MJ6UJGQBFXVXOP7XL7SKKJTFTYJUSNREP5FW4IHXPMWY2WSX"
+            }
+          },
+          {
+            "key": {
+              "symbol": "ref_hash"
+            },
+            "val": {
+              "bytes": "f402dfbd8e5f17bc2798772a85f0fc1989ce3fd86ebe185e83e83e9b613df9fe"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          },
+          {
+            "key": {
+              "symbol": "sender"
+            },
+            "val": {
+              "address": "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH3"
+            }
+          },
+          {
+            "key": {
+              "symbol": "token"
+            },
+            "val": {
+              "address": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+            }
+          },
+          {
+            "key": {
+              "symbol": "total"
+            },
+            "val": {
+              "i128": "30000000"
+            }
+          },
+          {
+            "key": {
+              "symbol": "tranche_count"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055190,
+      "ledgerClosedAt": "2026-10-06T15:12:17Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711875725123584-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 14,
+      "txHash": "08572f578e018e08ca6da1a7fbb4bf6dd4a3f6ac58ca8366b04dfc2a21fa7e5b",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payee_status_changed"
+        },
+        {
+          "bytes": "3e7236118c83eb3bd37927155be21cc90ada773aaca86380d28cea5f712be2f1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "changed_by"
+            },
+            "val": {
+              "address": "GCZRNEOGZH7FVJTA4OQN2YQ5LMS7LSV2GP7PWJFC73SMSLPA56DRAPQT"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          },
+          {
+            "key": {
+              "symbol": "status"
+            },
+            "val": {
+              "vec": [
+                {
+                  "symbol": "Suspended"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055193,
+      "ledgerClosedAt": "2026-10-06T15:12:32Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711888610004992-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 9,
+      "txHash": "41f5a3a1c4218677b57c9204b517dbc6e60ec4e82784abc0ac2db44b12129d99",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payee_status_changed"
+        },
+        {
+          "bytes": "3e7236118c83eb3bd37927155be21cc90ada773aaca86380d28cea5f712be2f1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "changed_by"
+            },
+            "val": {
+              "address": "GCZRNEOGZH7FVJTA4OQN2YQ5LMS7LSV2GP7PWJFC73SMSLPA56DRAPQT"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          },
+          {
+            "key": {
+              "symbol": "status"
+            },
+            "val": {
+              "vec": [
+                {
+                  "symbol": "Active"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055195,
+      "ledgerClosedAt": "2026-10-06T15:12:42Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711897199935488-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 8,
+      "txHash": "9573b03a513fdb6075d077d4129f1a7b3ed0e1d21fffc75d8c0995d859c3b0a1",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payout_updated"
+        },
+        {
+          "bytes": "3e7236118c83eb3bd37927155be21cc90ada773aaca86380d28cea5f712be2f1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "new_payout"
+            },
+            "val": {
+              "address": "GDURV6L3ZEUGNV4OFIHSBGQJAUPMDGZJMIH2WGPEM4WHOLNJYCOEPBRU"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5055200,
+      "ledgerClosedAt": "2026-10-06T15:13:07Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021711918674767872-0000000000",
+      "operationIndex": 0,
+      "transactionIndex": 7,
+      "txHash": "0961e2e178c27acf15b2bbdb986e20a008d1e7ce86a444cb85b2aea50bd69e93",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "payout_updated"
+        },
+        {
+          "bytes": "3e7236118c83eb3bd37927155be21cc90ada773aaca86380d28cea5f712be2f1"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "new_payout"
+            },
+            "val": {
+              "address": "GDPUY733T3UNZWG4EQMEBHBDGKD33YSFPOI2RB4AIK2JMOENKEXWK7ZG"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tranches": {
+    "1": [
+      {
+        "amount": "50000000",
+        "unlock_at": 1791299418
+      },
+      {
+        "amount": "50000000",
+        "unlock_at": 1791299418
+      }
+    ],
+    "2": [
+      {
+        "amount": "30000000",
+        "unlock_at": 1791303093
+      }
+    ]
+  },
+  "tranchesSource": "get_lock simulation on testnet, recorded 2026-10-06 (amount, unlock_at only)"
+}

@@ -15,6 +15,9 @@ const ConfigSchema = z.object({
     ),
   STELLAR_NETWORK_PASSPHRASE: z.string().min(1),
   KINLOCK_CONTRACT_ID: z.string().regex(/^C[A-Z2-7]{55}$/),
+  /** Ledger the contract was deployed in; where ingestion starts when no cursor is stored. */
+  KINLOCK_START_LEDGER: z.coerce.number().int().positive(),
+  POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
   PORT: z.coerce.number().int().positive().default(3001),
 });
 

@@ -20,6 +20,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@types/node": "26.6.4",
     "@types/pg": "8.23.1",
     "drizzle-kit": "0.31.11",

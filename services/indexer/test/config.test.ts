@@ -6,6 +6,7 @@ const valid = {
   STELLAR_RPC_URLS: "https://rpc-a.example, https://rpc-b.example",
   STELLAR_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015",
   KINLOCK_CONTRACT_ID: "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+  KINLOCK_START_LEDGER: "5052300",
 };
 
 describe("loadConfig", () => {
