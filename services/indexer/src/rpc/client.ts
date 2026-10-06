@@ -14,5 +14,8 @@ export interface RpcEvent {
 
 export interface RpcClient {
   getLatestLedger(): Promise<bigint>;
-  getEvents(fromLedger: bigint, cursor: string | null): Promise<{ events: RpcEvent[]; cursor: string | null }>;
+  getEvents(
+    fromLedger: bigint,
+    cursor: string | null,
+  ): Promise<{ events: RpcEvent[]; cursor: string | null }>;
 }
