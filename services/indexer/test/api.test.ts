@@ -1,15 +1,15 @@
-import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import { buildServer } from "../src/api/server.js";
 import type { Db } from "../src/db/client.js";
-import { payees } from "../src/db/schema.js";
 import { ingestBatch } from "../src/ingest/poller.js";
+import { syncRegistry } from "../src/registry/sync.js";
 import {
   CONTRACT_ID,
   fakeRpc,
   fixture,
   fixtureLocks,
   freshDb,
+  REGISTRY_FIXTURES,
   START_LEDGER,
 } from "./helpers/fixtures.js";
 
@@ -39,15 +39,7 @@ beforeAll(async () => {
     startLedger: START_LEDGER,
   });
   indexedLedger = r.lastLedger;
-  // Registry fields arrive with the registry join (M2-13); set two by hand for filter tests.
-  await db
-    .update(payees)
-    .set({ slug: "ke-kinlock-test-school", displayName: "Kinlock Test School", country: "KE" })
-    .where(eq(payees.payeeId, KE));
-  await db
-    .update(payees)
-    .set({ slug: "ph-kinlock-test-rentals", displayName: "Kinlock Test Rentals", country: "PH" })
-    .where(eq(payees.payeeId, PH));
+  await syncRegistry(db, REGISTRY_FIXTURES);
 }, 60_000);
 
 describe("GET /locks", () => {
@@ -123,12 +115,18 @@ describe("GET /locks/:id", () => {
 });
 
 describe("GET /payees", () => {
-  it("lists every payee, with registry fields null until joined", async () => {
+  it("lists every payee with its registry display data", async () => {
     const { body } = await get("/payees");
     expect(body.source).toBe("indexer");
     expect(body.payees).toHaveLength(3);
-    const unjoined = body.payees.find((p: { country: string | null }) => p.country === null);
-    expect(unjoined).toMatchObject({ slug: null, displayName: null, status: "Active" });
+    expect(body.payees.find((p: { payeeId: string }) => p.payeeId === KE)).toMatchObject({
+      slug: "ke-kinlock-test-school",
+      country: "KE",
+      localCurrency: "KES",
+      city: "Nairobi",
+      attesterHandle: "kinlock-testnet-attester-1",
+      status: "Active",
+    });
   });
 
   it("filters by category, country and text", async () => {
@@ -137,7 +135,7 @@ describe("GET /payees", () => {
     expect(await ids("category=Rent")).toEqual([PH]);
     expect(await ids("country=KE")).toEqual([KE]);
     expect(await ids("q=rentals")).toEqual([PH]);
-    expect(await ids("q=kinlock%20test")).toHaveLength(2);
+    expect(await ids("q=kinlock%20test")).toHaveLength(3);
     expect(await ids("q=%25")).toEqual([]); // % is a literal, not a wildcard
   });
 

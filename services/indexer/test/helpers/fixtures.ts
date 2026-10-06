@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
@@ -20,6 +21,8 @@ export const fixture: Fixture = JSON.parse(
 );
 export const CONTRACT_ID = fixture.events[0]?.contractId ?? "";
 export const START_LEDGER = 5052300;
+/** Copy of kinlock-registry/fixtures (payees and attesters) as registered on testnet. */
+export const REGISTRY_FIXTURES = fileURLToPath(new URL("../fixtures/registry", import.meta.url));
 
 let shared: Promise<Db> | undefined;
 

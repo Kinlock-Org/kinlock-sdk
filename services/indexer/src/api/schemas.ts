@@ -76,6 +76,8 @@ export interface Lock {
   createdTx: string;
 }
 
+/** Registry fields (slug through city, attesterHandle) are null unless the registry file is
+ *  hash-bound to the on-chain registration; see registry/sync.ts. */
 export interface Payee {
   payeeId: string;
   slug: string | null;
@@ -86,6 +88,8 @@ export interface Payee {
   payout: string;
   payoutUpdatedAt: string | null;
   attester: string;
+  /** Registry handle of the attester; null unless its file names the on-chain address. */
+  attesterHandle: string | null;
   metaHash: string;
   country: string | null;
   localCurrency: string | null;
