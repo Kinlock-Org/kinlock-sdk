@@ -13,12 +13,23 @@ const log = pino({ name: "kinlock-indexer" });
 const { db, close } = createDb(config.DATABASE_URL);
 const controller = new AbortController();
 
-const app = buildServer();
+const rpc = createRpcClient(config.STELLAR_RPC_URLS);
+
+// The chain tip for /health, fetched at most every 5 s however often /health is called.
+let tip: { ledger: number; at: number } | undefined;
+async function latestLedger(): Promise<number> {
+  if (!tip || Date.now() - tip.at > 5_000) {
+    tip = { ledger: await rpc.getLatestLedger(), at: Date.now() };
+  }
+  return tip.ledger;
+}
+
+const app = buildServer({ db, latestLedger, maxLagLedgers: config.MAX_LAG_LEDGERS });
 await app.listen({ port: config.PORT, host: "0.0.0.0" });
 
 const poller = runPoller({
   db,
-  rpc: createRpcClient(config.STELLAR_RPC_URLS),
+  rpc,
   locks: createLockReader(
     config.STELLAR_RPC_URLS,
     config.STELLAR_NETWORK_PASSPHRASE,

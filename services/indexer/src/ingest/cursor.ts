@@ -10,8 +10,13 @@ export interface Cursor {
   lastEventId: string | null;
 }
 
-export async function readCursor(db: Db): Promise<Cursor | null> {
+export async function readCursorRow(db: Db) {
   const [row] = await db.select().from(indexerCursor).where(eq(indexerCursor.id, 1));
+  return row ?? null;
+}
+
+export async function readCursor(db: Db): Promise<Cursor | null> {
+  const row = await readCursorRow(db);
   return row ? { lastLedger: row.lastLedger, lastEventId: row.lastEventId } : null;
 }
 
