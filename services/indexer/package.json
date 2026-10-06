@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch src/index.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "start": "node dist/db/migrate.js && node dist/index.js"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "17.2.1",
