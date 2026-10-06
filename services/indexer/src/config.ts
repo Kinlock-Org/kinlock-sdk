@@ -18,6 +18,8 @@ const ConfigSchema = z.object({
   /** Ledger the contract was deployed in; where ingestion starts when no cursor is stored. */
   KINLOCK_START_LEDGER: z.coerce.number().int().positive(),
   POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
+  /** /health reports lagging beyond this many ledgers (about 5-6 s each on Stellar). */
+  MAX_LAG_LEDGERS: z.coerce.number().int().positive().default(60),
   PORT: z.coerce.number().int().positive().default(3001),
 });
 
