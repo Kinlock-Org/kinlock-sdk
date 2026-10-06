@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 4 | 1 | 14 | 0 | 0 | 0 | 21% |
+| 3 SDK + indexer | 19 | 4 | 2 | 13 | 0 | 0 | 0 | 21% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **34** | **10** | **130** | **0** | **25** | **0** | **20%** |
+| **All** | **199** | **34** | **11** | **129** | **0** | **25** | **0** | **20%** |
 
 ---
 
@@ -277,7 +277,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-14 | Indexer tests: fixture replay, idempotency, cursor recovery, mixed versions | sdk | P0 | TODO | M2-10 | Replay twice yields identical DB |
 | M2-15 | Lag alerting and health metric | sdk | P1 | TODO | M2-12 | Alert fires in a simulated lag test |
 | M2-16 | Implement tier-3 verification and backfill per `M0-09` decision | sdk | P1 | TODO | M0-09, M2-06 | Old receipts verify; backfill fills a deliberate gap |
-| M2-17 | SDK docs and API reference; publish testnet package versions | sdk | P0 | TODO | M2-07 | Published; docs match exports |
+| M2-17 | SDK docs and API reference; publish testnet package versions | sdk | P0 | IN PROGRESS | M2-07 | Published; docs match exports |
 | M2-18 | Indexer container, testnet deployment, managed Postgres, daily backups | sdk | P0 | TODO | M2-14 | Running on testnet; restore tested once |
 | M2-19 | Indexer and list API: store and filter payees by `country` and `local_currency` (display and filter only) | sdk | P0 | TODO | M2-13, M1-29 | `/payees?country=` works; no country logic elsewhere |
 
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-06 | `feat/sdk-publish` | sdk | IN PROGRESS: M2-17 | `@kinlock/sdk` 0.1.0 made publishable (exports map, `dist/` only, public access) and a tag-triggered publish workflow (`sdk-vX.Y.Z`, checks + npm provenance). Verified by installing the packed tarball into a blank project and calling it. Not yet published: waits on `NPM_TOKEN` (F-11) |
 | 2026-10-06 | `feat/sdk-public-api` | sdk | no row changes | Public API gains `toBaseUnits`, `fromBaseUnits`, `generateSalt`, `computeRefHash`, `buildRequestLink`, `parseRequestLink` (owner-approved, ADR-0025); the pinned export test now lists 15 functions. AGENTS.md and docs synced |
 | 2026-10-06 | `feat/sdk-format-hash-links` | sdk | DONE: M2-03, M2-04, M2-07 | Exact amount conversion (never rounds); `ref_hash` = SHA-256(UTF-8(NFC-trimmed reference) ‖ 16 random salt bytes) (ADR-0024); claim links carry reference and salt only in the URL fragment; request-link helpers built but not exported (public API list, F-19). 49 tests incl. an independent hash check and a no-logging test; 4 mutation checks caught |
 | 2026-10-06 | `chore/license-and-publishing` | org | DONE: F-10. IN PROGRESS: F-11. DEC-02, DEC-03 resolved | Apache-2.0 for every repo (ADR-0022, `LICENSE` + template); TypeScript packages publish to npm under `@kinlock` from CI on tag (ADR-0023). F-11 waits on an owner creating the npm org and the `NPM_TOKEN` secret. Canonical roadmap re-merged from all repos (picks up M2-01, M3-01) |
