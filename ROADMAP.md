@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 4 | 2 | 13 | 0 | 0 | 0 | 21% |
+| 3 SDK + indexer | 19 | 7 | 3 | 9 | 0 | 0 | 0 | 37% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **34** | **11** | **129** | **0** | **25** | **0** | **20%** |
+| **All** | **199** | **37** | **12** | **125** | **0** | **25** | **0** | **21%** |
 
 ---
 
@@ -268,13 +268,13 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-05 | SDK `preflight`: balance, payee Active, recent payout change, duplicate `ref_hash`, authorized trustline | sdk | P0 | TODO | M2-02 | Each check has a test |
 | M2-06 | SDK `receipts`: `verifyReceipt` tiers 1 and 2 | sdk | P0 | TODO | M2-02 | Valid and tampered receipts distinguished |
 | M2-07 | SDK tests, including a check that nothing derived from the fragment is logged | sdk | P0 | DONE | M2-03 | Test fails if fragment data reaches logger |
-| M2-08 | Indexer scaffold: Zod config, RPC client with multi-provider failover | sdk | P0 | TODO | M2-01 | Failover tested |
-| M2-09 | Indexer ingest: poller, persisted cursor, gap detection | sdk | P0 | TODO | M2-08 | Gaps stop ingestion and alert; never skipped silently |
-| M2-10 | Indexer handlers per event type and `schema_version` | sdk | P0 | TODO | M2-09, M1-02 | Mixed-version fixtures handled |
-| M2-11 | DB schema and forward-only Drizzle migrations | sdk | P0 | IN PROGRESS | M2-01 | `chain_events`, `indexer_cursor`, `locks`, `tranches`, `payees` created |
+| M2-08 | Indexer scaffold: Zod config, RPC client with multi-provider failover | sdk | P0 | DONE | M2-01 | Failover tested |
+| M2-09 | Indexer ingest: poller, persisted cursor, gap detection | sdk | P0 | DONE | M2-08 | Gaps stop ingestion and alert; never skipped silently |
+| M2-10 | Indexer handlers per event type and `schema_version` | sdk | P0 | IN PROGRESS | M2-09, M1-02 | Mixed-version fixtures handled |
+| M2-11 | DB schema and forward-only Drizzle migrations | sdk | P0 | DONE | M2-01 | `chain_events`, `indexer_cursor`, `locks`, `tranches`, `payees` created |
 | M2-12 | List API: `/locks`, `/locks/:id`, `/payees`, `/health` with lag | sdk | P0 | TODO | M2-10, M2-11 | OpenAPI or typed docs; lag exposed |
 | M2-13 | Join payee display data from the registry repo | sdk | P0 | TODO | M1-25 | Payees show name, city, attester |
-| M2-14 | Indexer tests: fixture replay, idempotency, cursor recovery, mixed versions | sdk | P0 | TODO | M2-10 | Replay twice yields identical DB |
+| M2-14 | Indexer tests: fixture replay, idempotency, cursor recovery, mixed versions | sdk | P0 | IN PROGRESS | M2-10 | Replay twice yields identical DB |
 | M2-15 | Lag alerting and health metric | sdk | P1 | TODO | M2-12 | Alert fires in a simulated lag test |
 | M2-16 | Implement tier-3 verification and backfill per `M0-09` decision | sdk | P1 | TODO | M0-09, M2-06 | Old receipts verify; backfill fills a deliberate gap |
 | M2-17 | SDK docs and API reference; publish testnet package versions | sdk | P0 | IN PROGRESS | M2-07 | Published; docs match exports |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-06 | kinlock-sdk feat/indexer-ingest | sdk | M2-08 DONE, M2-09 DONE, M2-10 IN PROGRESS, M2-11 DONE, M2-14 IN PROGRESS | Indexer core: RPC client with failover and Zod checks, cursor-based ingest that commits events, effects and cursor in one transaction and stops on gaps or unknown events, handlers for all 7 events (schema_version 1), initial migration, PGlite tests replaying 11 recorded testnet events. Mixed-version fixtures wait for a second schema_version |
 | 2026-10-06 | `feat/sdk-publish` | sdk | IN PROGRESS: M2-17 | `@kinlock/sdk` 0.1.0 made publishable (exports map, `dist/` only, public access) and a tag-triggered publish workflow (`sdk-vX.Y.Z`, checks + npm provenance). Verified by installing the packed tarball into a blank project and calling it. Not yet published: waits on `NPM_TOKEN` (F-11) |
 | 2026-10-06 | `feat/sdk-public-api` | sdk | no row changes | Public API gains `toBaseUnits`, `fromBaseUnits`, `generateSalt`, `computeRefHash`, `buildRequestLink`, `parseRequestLink` (owner-approved, ADR-0025); the pinned export test now lists 15 functions. AGENTS.md and docs synced |
 | 2026-10-06 | `feat/sdk-format-hash-links` | sdk | DONE: M2-03, M2-04, M2-07 | Exact amount conversion (never rounds); `ref_hash` = SHA-256(UTF-8(NFC-trimmed reference) ‖ 16 random salt bytes) (ADR-0024); claim links carry reference and salt only in the URL fragment; request-link helpers built but not exported (public API list, F-19). 49 tests incl. an independent hash check and a no-logging test; 4 mutation checks caught |

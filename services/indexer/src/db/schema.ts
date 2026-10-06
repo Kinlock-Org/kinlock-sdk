@@ -4,6 +4,8 @@
  * `chain_events` is append-only. No receipts, private-reference, attestation, or user tables.
  * `payees.country` / `local_currency` come from registry data: filter and display only.
  */
+
+import { sql } from "drizzle-orm";
 import {
   bigint,
   bigserial,
@@ -53,8 +55,8 @@ export const locks = pgTable(
     payout: text("payout").notNull(),
     token: text("token").notNull(),
     total: amount("total").notNull(),
-    released: amount("released").notNull().default(0n),
-    returned: amount("returned").notNull().default(0n),
+    released: amount("released").notNull().default(sql`0`),
+    returned: amount("returned").notNull().default(sql`0`),
     refHash: text("ref_hash").notNull(),
     state: text("state").notNull(),
     /** Expired | Revoked | SuspendedTimeout | Declined */
@@ -88,7 +90,8 @@ export const tranches = pgTable(
 
 export const payees = pgTable("payees", {
   payeeId: text("payee_id").primaryKey(),
-  slug: text("slug").notNull().unique(),
+  /** From the registry repo (M2-13); null until joined. */
+  slug: text("slug").unique(),
   category: text("category").notNull(),
   status: text("status").notNull(),
   statusChangedAt: timestamp("status_changed_at", { withTimezone: true }).notNull(),
