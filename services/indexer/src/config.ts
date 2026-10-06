@@ -20,6 +20,9 @@ const ConfigSchema = z.object({
   POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
   /** /health reports lagging beyond this many ledgers (about 5-6 s each on Stellar). */
   MAX_LAG_LEDGERS: z.coerce.number().int().positive().default(60),
+  /** A checkout of kinlock-registry (or its fixtures/ for testnet). Unset: no registry join. */
+  REGISTRY_DIR: z.string().min(1).optional(),
+  REGISTRY_SYNC_MS: z.coerce.number().int().positive().default(60_000),
   PORT: z.coerce.number().int().positive().default(3001),
 });
 

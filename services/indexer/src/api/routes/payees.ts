@@ -16,6 +16,7 @@ const toPayee = (r: PayeeRow): Payee => ({
   payout: r.payout,
   payoutUpdatedAt: r.payoutUpdatedAt?.toISOString() ?? null,
   attester: r.attester,
+  attesterHandle: r.attesterHandle,
   metaHash: r.metaHash,
   country: r.country,
   localCurrency: r.localCurrency,
@@ -28,7 +29,7 @@ const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 /**
  * GET /payees?category=&country=&q=&limit=&after=  (ordered by payee_id)
- * Registry fields (slug, name, country, city) are null until the registry join (M2-13, M2-19).
+ * Registry fields (slug, name, country, city) are null unless hash-bound (registry/sync.ts).
  * Roadmap M2-12.
  */
 export function payeeRoutes({ db }: ApiDeps) {

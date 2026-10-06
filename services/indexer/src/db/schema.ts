@@ -105,5 +105,7 @@ export const payees = pgTable("payees", {
   /** ISO 4217 from the registry repo. Display only. */
   localCurrency: text("local_currency"),
   city: text("city"),
+  /** Handle from the registry repo, shown only if its address equals the on-chain attester. */
+  attesterHandle: text("attester_handle"),
   registeredAt: timestamp("registered_at", { withTimezone: true }).notNull(),
 });
