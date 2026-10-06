@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 1 | 1 | 17 | 0 | 0 | 0 | 5% |
+| 3 SDK + indexer | 19 | 4 | 1 | 14 | 0 | 0 | 0 | 21% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **31** | **10** | **133** | **0** | **25** | **0** | **18%** |
+| **All** | **199** | **34** | **10** | **130** | **0** | **25** | **0** | **20%** |
 
 ---
 
@@ -263,11 +263,11 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 |---|---|---|---|---|---|---|
 | M2-01 | Scaffold `kinlock-sdk`: pnpm workspace, tsconfig, lint, CI, Postgres `docker-compose` | sdk | P0 | DONE | G1 | CI green on skeleton |
 | M2-02 | SDK `client`: `createLock`, `release`, `refund`, `decline`, `getLock` (chain reads) | sdk | P0 | TODO | M1-18 | Works against local and testnet |
-| M2-03 | SDK `hash` and `links`: `ref_hash`, `buildClaimLink`, `parseClaimLink`, request links | sdk | P0 | TODO | M2-02 | Fragment never leaves the client; round-trip tests |
-| M2-04 | SDK `format`: bigint ↔ decimal strings; 7-decimal USDC formatting | sdk | P0 | TODO | M2-01 | No `number` used for money; edge-case tests |
+| M2-03 | SDK `hash` and `links`: `ref_hash`, `buildClaimLink`, `parseClaimLink`, request links | sdk | P0 | DONE | M2-02 | Fragment never leaves the client; round-trip tests |
+| M2-04 | SDK `format`: bigint ↔ decimal strings; 7-decimal USDC formatting | sdk | P0 | DONE | M2-01 | No `number` used for money; edge-case tests |
 | M2-05 | SDK `preflight`: balance, payee Active, recent payout change, duplicate `ref_hash`, authorized trustline | sdk | P0 | TODO | M2-02 | Each check has a test |
 | M2-06 | SDK `receipts`: `verifyReceipt` tiers 1 and 2 | sdk | P0 | TODO | M2-02 | Valid and tampered receipts distinguished |
-| M2-07 | SDK tests, including a check that nothing derived from the fragment is logged | sdk | P0 | TODO | M2-03 | Test fails if fragment data reaches logger |
+| M2-07 | SDK tests, including a check that nothing derived from the fragment is logged | sdk | P0 | DONE | M2-03 | Test fails if fragment data reaches logger |
 | M2-08 | Indexer scaffold: Zod config, RPC client with multi-provider failover | sdk | P0 | TODO | M2-01 | Failover tested |
 | M2-09 | Indexer ingest: poller, persisted cursor, gap detection | sdk | P0 | TODO | M2-08 | Gaps stop ingestion and alert; never skipped silently |
 | M2-10 | Indexer handlers per event type and `schema_version` | sdk | P0 | TODO | M2-09, M1-02 | Mixed-version fixtures handled |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-06 | `feat/sdk-format-hash-links` | sdk | DONE: M2-03, M2-04, M2-07 | Exact amount conversion (never rounds); `ref_hash` = SHA-256(UTF-8(NFC-trimmed reference) ‖ 16 random salt bytes) (ADR-0024); claim links carry reference and salt only in the URL fragment; request-link helpers built but not exported (public API list, F-19). 49 tests incl. an independent hash check and a no-logging test; 4 mutation checks caught |
 | 2026-10-06 | `chore/license-and-publishing` | org | DONE: F-10. IN PROGRESS: F-11. DEC-02, DEC-03 resolved | Apache-2.0 for every repo (ADR-0022, `LICENSE` + template); TypeScript packages publish to npm under `@kinlock` from CI on tag (ADR-0023). F-11 waits on an owner creating the npm org and the `NPM_TOKEN` secret. Canonical roadmap re-merged from all repos (picks up M2-01, M3-01) |
 | 2026-10-06 | `chore/ts-tooling` | sdk | DONE: M2-01. DEC-22, DEC-23 resolved (ADR-0021) | Biome (lint + format), Vitest, and tsx added; CI now runs lint, typecheck, test, and build. Tests pin the SDK's public API to the approved list and the contract's enum order, and check the indexer refuses bad config |
 | 2026-10-06 | `chore/roadmap-sync` (lockfile) | sdk | no row changes (M2-01 stays IN PROGRESS: lint and test tooling pending DEC-22) | Commit `pnpm-lock.yaml` for the dependency versions approved by the owner on 2026-10-06, so CI's frozen install works; typecheck and build pass |
