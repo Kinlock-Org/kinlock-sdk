@@ -1,0 +1,34 @@
+# Publish @kinlock/sdk to npm when an `sdk-vX.Y.Z` tag is pushed (ADR-0023, roadmap M2-17).
+# Refuses to publish if the tag doesn't match packages/sdk/package.json or any check fails.
+# Needs the repo secret NPM_TOKEN.
+name: publish
+on:
+  push:
+    tags: ["sdk-v*"]
+permissions:
+  contents: read
+  id-token: write # npm provenance
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - name: Tag matches the package version
+        run: |
+          tag_version="${GITHUB_REF_NAME#sdk-v}"
+          pkg_version="$(jq -r .version packages/sdk/package.json)"
+          [ "$tag_version" = "$pkg_version" ] || { echo "::error::tag $tag_version != package.json $pkg_version"; exit 1; }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @kinlock/sdk build
+      - run: pnpm --filter @kinlock/sdk publish --access public --no-git-checks --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
