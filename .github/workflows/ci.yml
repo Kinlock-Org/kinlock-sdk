@@ -1,4 +1,4 @@
-# lint (Biome), typecheck, test (Vitest), build. Postgres service lands with the indexer tests (M2-14).
+# lint (Biome), typecheck, test (Vitest), build; and the indexer container image builds.
 name: ci
 on:
   pull_request:
@@ -21,3 +21,23 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+  indexer-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f services/indexer/Dockerfile -t kinlock-indexer:ci .
+      # Migrations apply from inside the image, twice (the second run is a no-op).
+      - run: |
+          docker network create ci
+          docker run -d --name pg --network ci -e POSTGRES_PASSWORD=ci postgres:17
+          until docker exec pg pg_isready -U postgres; do sleep 1; done
+          for i in 1 2; do
+            docker run --rm --network ci -e DATABASE_URL=postgres://postgres:ci@pg:5432/postgres \
+              --entrypoint node kinlock-indexer:ci dist/db/migrate.js
+          done
+          docker exec pg psql -U postgres -tAc "select count(*) from payees" | grep -qx 0
+      # The service refuses to start without its configuration.
+      - run: |
+          if docker run --rm --entrypoint node kinlock-indexer:ci dist/index.js; then
+            echo "expected a config error"; exit 1
+          fi
