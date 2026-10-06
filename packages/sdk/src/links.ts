@@ -60,7 +60,7 @@ export function parseClaimLink(link: string): ClaimLinkParts {
   return { lockId: BigInt(id), reference: normalizeReference(reference), salt };
 }
 
-// ----- Request links (not part of the public API yet: see roadmap F-19) -----
+// ----- Request links (public since ADR-0025) -----
 
 export interface RequestTranche {
   /** Decimal string in token units, e.g. "150.25". */

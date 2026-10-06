@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-06 | `feat/sdk-public-api` | sdk | no row changes | Public API gains `toBaseUnits`, `fromBaseUnits`, `generateSalt`, `computeRefHash`, `buildRequestLink`, `parseRequestLink` (owner-approved, ADR-0025); the pinned export test now lists 15 functions. AGENTS.md and docs synced |
 | 2026-10-06 | `feat/sdk-format-hash-links` | sdk | DONE: M2-03, M2-04, M2-07 | Exact amount conversion (never rounds); `ref_hash` = SHA-256(UTF-8(NFC-trimmed reference) ‖ 16 random salt bytes) (ADR-0024); claim links carry reference and salt only in the URL fragment; request-link helpers built but not exported (public API list, F-19). 49 tests incl. an independent hash check and a no-logging test; 4 mutation checks caught |
 | 2026-10-06 | `chore/license-and-publishing` | org | DONE: F-10. IN PROGRESS: F-11. DEC-02, DEC-03 resolved | Apache-2.0 for every repo (ADR-0022, `LICENSE` + template); TypeScript packages publish to npm under `@kinlock` from CI on tag (ADR-0023). F-11 waits on an owner creating the npm org and the `NPM_TOKEN` secret. Canonical roadmap re-merged from all repos (picks up M2-01, M3-01) |
 | 2026-10-06 | `chore/ts-tooling` | sdk | DONE: M2-01. DEC-22, DEC-23 resolved (ADR-0021) | Biome (lint + format), Vitest, and tsx added; CI now runs lint, typecheck, test, and build. Tests pin the SDK's public API to the approved list and the contract's enum order, and check the indexer refuses bad config |

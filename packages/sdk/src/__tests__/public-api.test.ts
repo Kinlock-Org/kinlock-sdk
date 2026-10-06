@@ -6,7 +6,8 @@ const isClass = (v: unknown) =>
 
 describe("public API", () => {
   // AGENTS.md §8.2: adding public API needs approval, so the export list is pinned here.
-  it("exports exactly the approved functions", () => {
+  // ADR-0025 approved the amount, hashing, and request-link helpers on 2026-10-06.
+  it("exports exactly the approved functions (15)", () => {
     const functions = Object.entries(sdk)
       .filter(([, v]) => typeof v === "function" && !isClass(v))
       .map(([k]) => k)
@@ -14,13 +15,19 @@ describe("public API", () => {
     expect(functions).toEqual(
       [
         "buildClaimLink",
+        "buildRequestLink",
+        "computeRefHash",
         "createLock",
         "decline",
+        "fromBaseUnits",
+        "generateSalt",
         "getLock",
         "parseClaimLink",
+        "parseRequestLink",
         "preflight",
         "refund",
         "release",
+        "toBaseUnits",
         "verifyReceipt",
       ].sort(),
     );
