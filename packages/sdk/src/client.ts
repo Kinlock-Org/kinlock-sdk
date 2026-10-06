@@ -14,7 +14,9 @@ export interface CreateLockParams {
   expiresAt: bigint;
 }
 
-export async function createLock(_params: CreateLockParams): Promise<{ lockId: bigint; txHash: string }> {
+export async function createLock(
+  _params: CreateLockParams,
+): Promise<{ lockId: bigint; txHash: string }> {
   throw new NotImplementedError("createLock", "M2-02");
 }
 

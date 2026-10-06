@@ -1,4 +1,4 @@
-# DRAFT (ask-first: CI). lint, typecheck, test (with Postgres service), build.
+# lint (Biome), typecheck, test (Vitest), build. Postgres service lands with the indexer tests (M2-14).
 name: ci
 on:
   pull_request:
@@ -17,6 +17,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm test
       - run: pnpm build
-      # lint and test steps once tooling is decided (DEC-22)

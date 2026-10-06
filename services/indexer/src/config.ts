@@ -7,7 +7,12 @@ const ConfigSchema = z.object({
   STELLAR_RPC_URLS: z
     .string()
     .min(1)
-    .transform((s) => s.split(",").map((u) => u.trim()).filter(Boolean)),
+    .transform((s) =>
+      s
+        .split(",")
+        .map((u) => u.trim())
+        .filter(Boolean),
+    ),
   STELLAR_NETWORK_PASSPHRASE: z.string().min(1),
   KINLOCK_CONTRACT_ID: z.string().regex(/^C[A-Z2-7]{55}$/),
   PORT: z.coerce.number().int().positive().default(3001),

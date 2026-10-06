@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 11 | 1 | 7 | 0 | 0 | 0 | 58% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 0 | 2 | 17 | 0 | 0 | 0 | 0% |
+| 3 SDK + indexer | 19 | 1 | 1 | 17 | 0 | 0 | 0 | 5% |
 | 4 App | 24 | 0 | 2 | 22 | 0 | 0 | 0 | 0% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **28** | **11** | **135** | **0** | **25** | **0** | **16%** |
+| **All** | **199** | **29** | **10** | **135** | **0** | **25** | **0** | **17%** |
 
 ---
 
@@ -261,7 +261,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 
 | ID | Task | Repo | Pri | Status | Depends on | Done when |
 |---|---|---|---|---|---|---|
-| M2-01 | Scaffold `kinlock-sdk`: pnpm workspace, tsconfig, lint, CI, Postgres `docker-compose` | sdk | P0 | IN PROGRESS | G1 | CI green on skeleton |
+| M2-01 | Scaffold `kinlock-sdk`: pnpm workspace, tsconfig, lint, CI, Postgres `docker-compose` | sdk | P0 | DONE | G1 | CI green on skeleton |
 | M2-02 | SDK `client`: `createLock`, `release`, `refund`, `decline`, `getLock` (chain reads) | sdk | P0 | TODO | M1-18 | Works against local and testnet |
 | M2-03 | SDK `hash` and `links`: `ref_hash`, `buildClaimLink`, `parseClaimLink`, request links | sdk | P0 | TODO | M2-02 | Fragment never leaves the client; round-trip tests |
 | M2-04 | SDK `format`: bigint ↔ decimal strings; 7-decimal USDC formatting | sdk | P0 | TODO | M2-01 | No `number` used for money; edge-case tests |
@@ -361,8 +361,8 @@ Resolve each with an ADR and link it here. Move resolved rows to the bottom with
 | DEC-19 | Pilot market(s) | M0-16 | Open |
 | DEC-20 | Supported-countries policy (who decides, criteria, restricted jurisdictions) | M0-17 | Open |
 | DEC-21 | Enforce attester-country scope on-chain too, or registry CI only (default: CI only) | M1-29 | Open |
-| DEC-22 | TypeScript tooling: linter, test runner, dev/script runner, and i18n library | M2-01, M3-01 | Open |
-| DEC-23 | JSON Schema validator for registry CI | M1-24 | Open |
+| DEC-22 | TypeScript tooling: linter, test runner, dev/script runner, and i18n library | M2-01, M3-01 | Resolved 2026-10-06: Biome, Vitest, tsx; built-in i18n helper (ADR-0021) |
+| DEC-23 | JSON Schema validator for registry CI | M1-24 | Resolved 2026-10-06: Ajv + ajv-formats (ADR-0021) |
 
 ---
 
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-06 | `chore/ts-tooling` | sdk | DONE: M2-01. DEC-22, DEC-23 resolved (ADR-0021) | Biome (lint + format), Vitest, and tsx added; CI now runs lint, typecheck, test, and build. Tests pin the SDK's public API to the approved list and the contract's enum order, and check the indexer refuses bad config |
 | 2026-10-06 | `chore/roadmap-sync` (lockfile) | sdk | no row changes (M2-01 stays IN PROGRESS: lint and test tooling pending DEC-22) | Commit `pnpm-lock.yaml` for the dependency versions approved by the owner on 2026-10-06, so CI's frozen install works; typecheck and build pass |
 | 2026-10-06 | `chore/roadmap-merge` | org | DONE: F-08, F-14, F-15, F-17, W-03 | Added `scripts/roadmap-merge` (three-way merge against the last merged copy; conflicts reported, never guessed) and merged every repo's ROADMAP.md into the canonical copy, then synced it to all repos. Verified: org exists with an owner; `docs-in-sync` and `roadmap-check` fail and pass correctly; templates and the CONTRIBUTING rule are in every repo. F-09 stays IN PROGRESS (code of conduct is still a draft) |
 | 2026-10-06 | `chore/testnet-multisig-deploy` | contracts | DONE: M1-19 | Testnet contract `CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI` with a 2-of-3 multisig admin (verified: one signature rejected `TxBadAuth`, two accepted), test attester added, Circle testnet USDC allowlisted. Adds `scripts/multisig-invoke.sh` and `deployments/testnet-setup.md`; vendored docs resynced (ADR-0020). Supersedes the single-key contract `CDIPDHSA…TLYL` |
