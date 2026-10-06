@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "echo 'dev runner pending (DEC-22)' && exit 1",
+    "dev": "tsx watch src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/node": "26.6.4",
     "@types/pg": "8.23.1",
-    "drizzle-kit": "0.31.11"
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15"
   }
 }
