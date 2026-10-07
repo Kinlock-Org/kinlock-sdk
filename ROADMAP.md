@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-07 |
+| **Last updated** | 2026-10-07 (README status banner) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-07 | `docs/readme-status-banner` | sdk | no row changes | README said "scaffold... features are not built," which is stale (client, preflight, and receipts are implemented and released as v0.3.0). Corrected the status banner to match current progress; supports org-level `W-01` Wave-readiness |
 | 2026-10-07 | kinlock-sdk feat/sdk-getpayee | sdk | no row changes | `getPayee` chain read (ADR-0030) for the sender lock page's refund rule; `@kinlock/sdk` 0.3.0 (release via tag `sdk-v0.3.0` after merge). Verified on testnet |
 | 2026-10-07 | kinlock-sdk test/sdk-localnet | sdk | M2-02 DONE | SDK client verified on the local quickstart network (fresh contract, local USDC, one payee: preflight, create, read, release, refused early refund, decline) and again on testnet; full refund verified on testnet (lock 4). Smoke script renamed `scripts/smoke.mjs` and parameterized for local or testnet |
 | 2026-10-07 | kinlock-sdk chore/sdk-0.2.0 | sdk | M2-17 IN PROGRESS (unchanged) | `@kinlock/sdk` 0.2.0: first release with the contract client, preflight and receipt verification (0.1.0 had them as stubs); signatures per ADR-0027..0029. Released via tag `sdk-v0.2.0` after merge |

@@ -2,7 +2,7 @@
 
 TypeScript SDK (`packages/sdk`) and the event indexer + list API (`services/indexer`).
 
-> **Status: scaffold.** Structure and data models are drafted; features are not built. Testnet only.
+> **Status: active development, testnet only.** The client (`createLock`, `release`, `refund`, `decline`, `getLock`, `getPayee`), preflight, and receipt verification are implemented and released (v0.3.0); the indexer is still being scaffolded. See `ROADMAP.md`.
 
 ## Quick start
 ```
