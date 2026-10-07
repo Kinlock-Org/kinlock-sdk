@@ -23,6 +23,8 @@ export interface KinlockConfig {
   contractId: Address;
   /** Allow a plain-http RPC URL (local networks only). */
   allowHttp?: boolean;
+  /** Kinlock list API, for preflight's indexer-backed warnings only. Never used for money pages. */
+  indexerUrl?: string;
 }
 
 /** The account that signs, and the wallet function that signs for it. */
