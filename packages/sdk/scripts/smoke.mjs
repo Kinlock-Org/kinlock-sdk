@@ -1,12 +1,17 @@
 #!/usr/bin/env node
-// Testnet integration check for the SDK client (roadmap M2-02). Not run in CI: it moves real
-// testnet USDC and needs the `stellar` CLI with the testnet identities on this machine.
+// Integration check for the SDK client (roadmap M2-02, M2-05) against a real network. Not run in
+// CI: it moves tokens and needs the `stellar` CLI with the network's identities on this machine.
 //
-//   pnpm --filter @kinlock/sdk build && node packages/sdk/scripts/testnet-smoke.mjs
-//   node packages/sdk/scripts/testnet-smoke.mjs --refund <lockId>   # once that lock has expired
+//   pnpm --filter @kinlock/sdk build && node packages/sdk/scripts/smoke.mjs        # testnet
+//   node packages/sdk/scripts/smoke.mjs --refund <lockId>                          # once expired
+//
+// Local quickstart network (scripts/localnet.sh in kinlock-contracts):
+//   KINLOCK_NETWORK=local STELLAR_RPC_URL=http://localhost:8000/rpc KINLOCK_CONTRACT_ID=C… \
+//   KINLOCK_TOKEN=C… KINLOCK_PAYEE_ID=<hex> KINLOCK_SENDER_IDENTITY=… KINLOCK_PAYEE_IDENTITY=… \
+//   KINLOCK_INDEXER_URL= node packages/sdk/scripts/smoke.mjs
 //
 // Signing goes through `stellar tx sign --sign-with-key <identity>`: keys stay in the CLI's
-// keystore and are never read here. TESTNET ONLY.
+// keystore and are never read here. Testnet or local only.
 import { execFileSync } from "node:child_process";
 import {
   computeRefHash,
@@ -19,18 +24,46 @@ import {
   release,
 } from "../dist/index.js";
 
-const config = {
-  rpcUrl: process.env.STELLAR_RPC_URL ?? "https://soroban-testnet.stellar.org",
-  networkPassphrase: "Test SDF Network ; September 2015",
-  contractId:
-    process.env.KINLOCK_CONTRACT_ID ?? "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
-  indexerUrl: process.env.KINLOCK_INDEXER_URL ?? "https://indexer-production-705a.up.railway.app",
+const NETWORKS = {
+  testnet: {
+    passphrase: "Test SDF Network ; September 2015",
+    rpc: "https://soroban-testnet.stellar.org",
+  },
+  local: { passphrase: "Standalone Network ; February 2017", rpc: "http://localhost:8000/rpc" },
 };
-const USDC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
-/** A fixture payee registered on testnet (kinlock-registry fixtures). */
-const PAYEE_ID = "4485665bae55d2562f20ad82cec50c8aaa99ddf613b982509711a6b474ded0ba";
-const SENDER = process.env.KINLOCK_SENDER_IDENTITY ?? "kinlock-testnet-sender-1";
-const PAYEE = process.env.KINLOCK_PAYEE_IDENTITY ?? "kinlock-testnet-payee-ke";
+const NETWORK = process.env.KINLOCK_NETWORK ?? "testnet";
+const net = NETWORKS[NETWORK];
+if (!net) throw new Error(`KINLOCK_NETWORK must be testnet or local, not ${NETWORK}`);
+const testnet = NETWORK === "testnet";
+
+const env = (name, testnetDefault) => {
+  const value = process.env[name] ?? (testnet ? testnetDefault : undefined);
+  if (value === undefined) throw new Error(`set ${name} for the ${NETWORK} network`);
+  return value;
+};
+
+const rpcUrl = process.env.STELLAR_RPC_URL ?? net.rpc;
+// An empty KINLOCK_INDEXER_URL means "no indexer": preflight's two warnings report unknown.
+const indexerUrl = env("KINLOCK_INDEXER_URL", "https://indexer-production-705a.up.railway.app");
+const config = {
+  rpcUrl,
+  networkPassphrase: net.passphrase,
+  contractId: env(
+    "KINLOCK_CONTRACT_ID",
+    "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+  ),
+  allowHttp: rpcUrl.startsWith("http://"),
+  ...(indexerUrl ? { indexerUrl } : {}),
+};
+const USDC = env("KINLOCK_TOKEN", "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA");
+/** On testnet, a fixture payee from kinlock-registry. */
+const PAYEE_ID = env(
+  "KINLOCK_PAYEE_ID",
+  "4485665bae55d2562f20ad82cec50c8aaa99ddf613b982509711a6b474ded0ba",
+);
+const SENDER = env("KINLOCK_SENDER_IDENTITY", "kinlock-testnet-sender-1");
+const PAYEE = env("KINLOCK_PAYEE_IDENTITY", "kinlock-testnet-payee-ke");
+console.log(`network: ${NETWORK} (${rpcUrl})`);
 
 function cliSigner(identity) {
   const address = execFileSync("stellar", ["keys", "address", identity]).toString().trim();
@@ -39,7 +72,7 @@ function cliSigner(identity) {
     signTransaction: async (xdr) => ({
       signedTxXdr: execFileSync(
         "stellar",
-        ["tx", "sign", "--sign-with-key", identity, "--network", "testnet"],
+        ["tx", "sign", "--sign-with-key", identity, "--network", NETWORK],
         { input: xdr },
       )
         .toString()
@@ -80,8 +113,10 @@ check(
   "preflight: no blocking check fails",
 );
 check(
-  checks.every((c) => c.status !== "unknown"),
-  "preflight: every check completed (chain and indexer reachable)",
+  checks.every((c) => c.status !== "unknown" || (!indexerUrl && c.severity === "warn")),
+  indexerUrl
+    ? "preflight: every check completed (chain and indexer reachable)"
+    : "preflight: every chain check completed (no indexer configured)",
 );
 const { lockId, txHash } = await createLock(
   config,
