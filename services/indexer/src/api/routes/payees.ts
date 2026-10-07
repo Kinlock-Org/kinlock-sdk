@@ -28,7 +28,7 @@ const toPayee = (r: PayeeRow): Payee => ({
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 /**
- * GET /payees?category=&country=&q=&limit=&after=  (ordered by payee_id)
+ * GET /payees?payee_id=&category=&country=&q=&limit=&after=  (ordered by payee_id)
  * Registry fields (slug, name, country, city) are null unless hash-bound (registry/sync.ts).
  * Roadmap M2-12.
  */
@@ -38,6 +38,7 @@ export function payeeRoutes({ db }: ApiDeps) {
       const q = parseOr400(PayeesQuery, req.query, reply);
       if (!q) return;
       const where: (SQL | undefined)[] = [];
+      if (q.payee_id) where.push(eq(payees.payeeId, q.payee_id));
       if (q.category) where.push(eq(payees.category, q.category));
       if (q.country) where.push(eq(payees.country, q.country));
       if (q.q) {

@@ -71,6 +71,13 @@ describe("GET /locks", () => {
       (await get("/locks?state=Refunded")).body.locks.map((l: { id: string }) => l.id),
     ).toEqual(["2"]);
     expect((await get("/locks?state=Completed")).body.locks).toEqual([]);
+    const KE_REF = "dee2634ab9acdbfff6fe5c0595fcda66c0897d1c6968c290745da4f384e3ee5e";
+    expect(
+      (await get(`/locks?payee_id=${KE}&ref_hash=${KE_REF}`)).body.locks.map(
+        (l: { id: string }) => l.id,
+      ),
+    ).toEqual(["1"]);
+    expect((await get(`/locks?payee_id=${PH}&ref_hash=${KE_REF}`)).body.locks).toEqual([]);
   });
 
   it("pages with limit and before", async () => {
@@ -135,6 +142,7 @@ describe("GET /payees", () => {
   it("filters by category, country and text", async () => {
     const ids = async (q: string) =>
       (await get(`/payees?${q}`)).body.payees.map((p: { payeeId: string }) => p.payeeId);
+    expect(await ids(`payee_id=${KE}`)).toEqual([KE]);
     expect(await ids("category=Rent")).toEqual([PH]);
     expect(await ids("country=KE")).toEqual([KE]);
     expect(await ids("q=rentals")).toEqual([PH]);
@@ -151,7 +159,7 @@ describe("GET /payees", () => {
   });
 
   it("rejects bad filters with 400", async () => {
-    for (const q of ["country=ke", "country=KEN", "category=Health", "after=zz"]) {
+    for (const q of ["country=ke", "country=KEN", "category=Health", "after=zz", "payee_id=KE"]) {
       expect((await get(`/payees?${q}`)).status, q).toBe(400);
     }
   });
