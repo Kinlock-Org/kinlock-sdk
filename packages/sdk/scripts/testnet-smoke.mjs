@@ -14,6 +14,7 @@ import {
   decline,
   generateSalt,
   getLock,
+  preflight,
   refund,
   release,
 } from "../dist/index.js";
@@ -23,6 +24,7 @@ const config = {
   networkPassphrase: "Test SDF Network ; September 2015",
   contractId:
     process.env.KINLOCK_CONTRACT_ID ?? "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+  indexerUrl: process.env.KINLOCK_INDEXER_URL ?? "https://indexer-production-705a.up.railway.app",
 };
 const USDC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 /** A fixture payee registered on testnet (kinlock-registry fixtures). */
@@ -65,6 +67,22 @@ if (refundId > 0) {
 const payee = cliSigner(PAYEE);
 const now = BigInt(Math.floor(Date.now() / 1000));
 const refHash = await computeRefHash("SMOKE-TEST-INVOICE", generateSalt());
+const checks = await preflight(config, {
+  sender: sender.address,
+  token: USDC,
+  payeeId: PAYEE_ID,
+  total: 10000000n,
+  refHash,
+});
+console.log(checks.map((c) => `  ${c.check}: ${c.status} (${c.severity})`).join("\n"));
+check(
+  checks.every((c) => c.severity !== "block" || c.status === "pass"),
+  "preflight: no blocking check fails",
+);
+check(
+  checks.every((c) => c.status !== "unknown"),
+  "preflight: every check completed (chain and indexer reachable)",
+);
 const { lockId, txHash } = await createLock(
   config,
   {
