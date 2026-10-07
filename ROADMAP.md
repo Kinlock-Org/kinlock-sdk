@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-07 | kinlock-sdk chore/sdk-0.2.0 | sdk | M2-17 IN PROGRESS (unchanged) | `@kinlock/sdk` 0.2.0: first release with the contract client, preflight and receipt verification (0.1.0 had them as stubs); signatures per ADR-0027..0029. Released via tag `sdk-v0.2.0` after merge |
 | 2026-10-07 | kinlock-sdk feat/sdk-receipts | sdk | M2-06 DONE | SDK `verifyReceipt` (ADR-0029): tier 1 from RPC events (exact event, Kinlock contract, successful call, known schema version), tier 2 confirmed with `get_lock` after the indexer event lookup; reasons verified / not_found / mismatch / unverifiable. Real testnet release, decline and refund receipts verified; tampered references rejected |
 | 2026-10-07 | kinlock-sdk feat/indexer-event-lookup | sdk | M2-06 IN PROGRESS | List API `GET /events/:txHash/:eventIndex`: which lock and tranche a receipt refers to, as a lookup aid for tier-2 receipt verification (proof stays on chain). Started while M2-02 is IN PROGRESS (local-network run pending), with owner approval |
 | 2026-10-07 | kinlock-sdk feat/sdk-preflight | sdk | M2-05 DONE | SDK `preflight` (ADR-0028): sender balance, payee Active and payout trustline from chain (block); recent payout change and duplicate reference from the indexer (warn); `unknown` when a check can't complete. Unit test per check; testnet run with the live indexer passed all five |
