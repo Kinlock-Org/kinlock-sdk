@@ -27,6 +27,8 @@ const limit = z.coerce.number().int().min(1).max(MAX_LIMIT).default(50);
 export const LocksQuery = z.object({
   sender: address.optional(),
   payee_id: hex32.optional(),
+  /** Locks with this reference hash (duplicate-reference preflight, with payee_id). */
+  ref_hash: hex32.optional(),
   state: z.enum(LOCK_STATES).optional(),
   limit,
   /** Return locks with an id lower than this (newest first). Use `next` from the previous page. */
@@ -36,6 +38,8 @@ export const LocksQuery = z.object({
 export const LockParams = z.object({ id: lockId });
 
 export const PayeesQuery = z.object({
+  /** One payee by its on-chain id (preflight's recent-payout-change check). */
+  payee_id: hex32.optional(),
   category: z.enum(CATEGORIES).optional(),
   /** ISO 3166-1 alpha-2, from registry data. Filter only. */
   country: z

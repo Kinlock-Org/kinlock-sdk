@@ -40,7 +40,7 @@ const toTranche = (t: TrancheRow): Tranche => ({
 });
 
 /**
- * GET /locks?sender=&payee_id=&state=&limit=&before=  (lists, newest first)
+ * GET /locks?sender=&payee_id=&ref_hash=&state=&limit=&before=  (lists, newest first)
  * GET /locks/:id  (display convenience; the app re-reads chain before any action)
  * Roadmap M2-12.
  */
@@ -52,6 +52,7 @@ export function lockRoutes({ db }: ApiDeps) {
       const where: SQL[] = [];
       if (q.sender) where.push(eq(locks.sender, q.sender));
       if (q.payee_id) where.push(eq(locks.payeeId, q.payee_id));
+      if (q.ref_hash) where.push(eq(locks.refHash, q.ref_hash));
       if (q.state) where.push(eq(locks.state, q.state));
       if (q.before !== undefined) where.push(lt(locks.id, q.before));
       const rows = await db
