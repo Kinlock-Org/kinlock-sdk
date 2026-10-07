@@ -1,13 +1,12 @@
-# Publish @kinlock/sdk to npm when an `sdk-vX.Y.Z` tag is pushed (ADR-0023, roadmap M2-17).
-# Refuses to publish if the tag doesn't match packages/sdk/package.json or any check fails.
-# Needs the repo secret NPM_TOKEN.
+# Release @kinlock/sdk when an `sdk-vX.Y.Z` tag is pushed (ADR-0026, roadmap M2-17): the packed
+# .tgz is attached to a GitHub Release of that tag. Refuses to release if the tag doesn't match
+# packages/sdk/package.json or any check fails. Uses the workflow's GITHUB_TOKEN; no publish secret.
 name: publish
 on:
   push:
     tags: ["sdk-v*"]
 permissions:
-  contents: read
-  id-token: write # npm provenance
+  contents: write # create the GitHub Release
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -18,7 +17,6 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          registry-url: https://registry.npmjs.org
       - name: Tag matches the package version
         run: |
           tag_version="${GITHUB_REF_NAME#sdk-v}"
@@ -29,6 +27,13 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @kinlock/sdk build
-      - run: pnpm --filter @kinlock/sdk publish --access public --no-git-checks --provenance
+      - run: pnpm --filter @kinlock/sdk pack --pack-destination "$RUNNER_TEMP"
+      - name: Attach to a GitHub Release (never re-uploads an existing version)
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tgz="$RUNNER_TEMP/kinlock-sdk-${GITHUB_REF_NAME#sdk-v}.tgz"
+          test -f "$tgz"
+          gh release create "$GITHUB_REF_NAME" "$tgz" \
+            --title "@kinlock/sdk ${GITHUB_REF_NAME#sdk-v}" \
+            --notes "Install: \`pnpm add https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$tgz")\`"

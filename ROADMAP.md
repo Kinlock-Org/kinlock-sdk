@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-06 |
+| **Last updated** | 2026-10-07 |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -342,7 +342,7 @@ Resolve each with an ADR and link it here. Move resolved rows to the bottom with
 |---|---|---|---|
 | DEC-01 | Org name final (`kinlock` or backup) | F-08 | Open |
 | DEC-02 | License | F-10 | Resolved 2026-10-06: Apache-2.0 (ADR-0022) |
-| DEC-03 | npm scope and publish rights | F-11 | Resolved 2026-10-06: public npm, scope @kinlock, CI publishes on tag (ADR-0023) |
+| DEC-03 | npm scope and publish rights | F-11 | Resolved 2026-10-06: public npm, scope @kinlock, CI publishes on tag (ADR-0023). Superseded 2026-10-07: CI attaches package tarballs to GitHub Releases on tag; names stay @kinlock/... ([ADR-0026](docs/adr/0026-github-release-packages.md)) |
 | DEC-04 | Canonical docs location (org `.github`, recommended) | F-09 | Open |
 | DEC-05 | Commit Soroban `test_snapshots/` (default: ignore) | M1-01 | Open |
 | DEC-06 | Package manager (default: pnpm) | M2-01 | Open |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-07 | kinlock-sdk chore/sdk-github-release | sdk | M2-17 IN PROGRESS (unchanged), DEC-03 amended | `publish` workflow attaches the packed `@kinlock/sdk` tarball to a GitHub Release on `sdk-vX.Y.Z` (ADR-0026) instead of publishing to npm; no publish secret; ADR-0026 synced |
 | 2026-10-07 | kinlock-sdk docs/indexer-testnet-deployed | sdk | M2-18 IN PROGRESS (unchanged) | Indexer live on Railway testnet (https://indexer-production-705a.up.railway.app): caught up, registry join working, refund of lock 2 indexed within seconds. Postgres PITR enabled and a point-in-time restore into a new service succeeded; still open: daily schedule refused on the current plan, and the restored data not yet compared against live |
 | 2026-10-07 | kinlock-sdk test/indexer-real-refund-fixture | sdk | no row changes | Indexer fixtures: add the real testnet `refunded` event for lock 2 (tx 7316fe69…) and replace the synthetic refund in the tests; replay now ends with lock 2 Refunded/Expired |
 | 2026-10-06 | kinlock-sdk feat/indexer-deploy | sdk | M2-18 IN PROGRESS | Indexer container (Dockerfile, registry clone at start, migrations before start), `railway.json`, CI job that builds the image and applies migrations against Postgres, Railway runbook with backup and restore-test steps. Not yet deployed: needs the Railway project and variables |
