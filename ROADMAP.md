@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 11 | 5 | 3 | 0 | 0 | 0 | 58% |
+| 3 SDK + indexer | 19 | 11 | 6 | 2 | 0 | 0 | 0 | 58% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **41** | **14** | **119** | **0** | **25** | **0** | **24%** |
+| **All** | **199** | **41** | **15** | **118** | **0** | **25** | **0** | **24%** |
 
 ---
 
@@ -266,7 +266,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-03 | SDK `hash` and `links`: `ref_hash`, `buildClaimLink`, `parseClaimLink`, request links | sdk | P0 | DONE | M2-02 | Fragment never leaves the client; round-trip tests |
 | M2-04 | SDK `format`: bigint ↔ decimal strings; 7-decimal USDC formatting | sdk | P0 | DONE | M2-01 | No `number` used for money; edge-case tests |
 | M2-05 | SDK `preflight`: balance, payee Active, recent payout change, duplicate `ref_hash`, authorized trustline | sdk | P0 | DONE | M2-02 | Each check has a test |
-| M2-06 | SDK `receipts`: `verifyReceipt` tiers 1 and 2 | sdk | P0 | TODO | M2-02 | Valid and tampered receipts distinguished |
+| M2-06 | SDK `receipts`: `verifyReceipt` tiers 1 and 2 | sdk | P0 | IN PROGRESS | M2-02 | Valid and tampered receipts distinguished |
 | M2-07 | SDK tests, including a check that nothing derived from the fragment is logged | sdk | P0 | DONE | M2-03 | Test fails if fragment data reaches logger |
 | M2-08 | Indexer scaffold: Zod config, RPC client with multi-provider failover | sdk | P0 | DONE | M2-01 | Failover tested |
 | M2-09 | Indexer ingest: poller, persisted cursor, gap detection | sdk | P0 | DONE | M2-08 | Gaps stop ingestion and alert; never skipped silently |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-07 | kinlock-sdk feat/indexer-event-lookup | sdk | M2-06 IN PROGRESS | List API `GET /events/:txHash/:eventIndex`: which lock and tranche a receipt refers to, as a lookup aid for tier-2 receipt verification (proof stays on chain). Started while M2-02 is IN PROGRESS (local-network run pending), with owner approval |
 | 2026-10-07 | kinlock-sdk feat/sdk-preflight | sdk | M2-05 DONE | SDK `preflight` (ADR-0028): sender balance, payee Active and payout trustline from chain (block); recent payout change and duplicate reference from the indexer (warn); `unknown` when a check can't complete. Unit test per check; testnet run with the live indexer passed all five |
 | 2026-10-07 | kinlock-sdk feat/indexer-preflight-filters | sdk | M2-05 IN PROGRESS | List API filters for preflight: `GET /locks?payee_id=&ref_hash=` (duplicate reference, uses the existing (payee_id, ref_hash) index) and `GET /payees?payee_id=` (recent payout change) |
 | 2026-10-07 | kinlock-sdk feat/sdk-client | sdk | M2-02 IN PROGRESS | SDK client over `@kinlock/contract` 0.1.0 (GitHub Release): `createLock`, `release`, `refund`, `decline` (build, simulate, wallet signs, submit) and chain-only `getLock`, with config and signer parameters (ADR-0027). Verified on testnet (create, read, release, refused early refund, decline); local-network run not done (no Docker on the dev machine) |
