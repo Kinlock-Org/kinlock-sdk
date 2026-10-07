@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 12 | 5 | 2 | 0 | 0 | 0 | 63% |
+| 3 SDK + indexer | 19 | 13 | 4 | 2 | 0 | 0 | 0 | 68% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **42** | **14** | **118** | **0** | **25** | **0** | **24%** |
+| **All** | **199** | **43** | **13** | **118** | **0** | **25** | **0** | **25%** |
 
 ---
 
@@ -262,7 +262,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | ID | Task | Repo | Pri | Status | Depends on | Done when |
 |---|---|---|---|---|---|---|
 | M2-01 | Scaffold `kinlock-sdk`: pnpm workspace, tsconfig, lint, CI, Postgres `docker-compose` | sdk | P0 | DONE | G1 | CI green on skeleton |
-| M2-02 | SDK `client`: `createLock`, `release`, `refund`, `decline`, `getLock` (chain reads) | sdk | P0 | IN PROGRESS | M1-18 | Works against local and testnet |
+| M2-02 | SDK `client`: `createLock`, `release`, `refund`, `decline`, `getLock` (chain reads) | sdk | P0 | DONE | M1-18 | Works against local and testnet |
 | M2-03 | SDK `hash` and `links`: `ref_hash`, `buildClaimLink`, `parseClaimLink`, request links | sdk | P0 | DONE | M2-02 | Fragment never leaves the client; round-trip tests |
 | M2-04 | SDK `format`: bigint ↔ decimal strings; 7-decimal USDC formatting | sdk | P0 | DONE | M2-01 | No `number` used for money; edge-case tests |
 | M2-05 | SDK `preflight`: balance, payee Active, recent payout change, duplicate `ref_hash`, authorized trustline | sdk | P0 | DONE | M2-02 | Each check has a test |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-07 | kinlock-sdk test/sdk-localnet | sdk | M2-02 DONE | SDK client verified on the local quickstart network (fresh contract, local USDC, one payee: preflight, create, read, release, refused early refund, decline) and again on testnet; full refund verified on testnet (lock 4). Smoke script renamed `scripts/smoke.mjs` and parameterized for local or testnet |
 | 2026-10-07 | kinlock-sdk chore/sdk-0.2.0 | sdk | M2-17 IN PROGRESS (unchanged) | `@kinlock/sdk` 0.2.0: first release with the contract client, preflight and receipt verification (0.1.0 had them as stubs); signatures per ADR-0027..0029. Released via tag `sdk-v0.2.0` after merge |
 | 2026-10-07 | kinlock-sdk feat/sdk-receipts | sdk | M2-06 DONE | SDK `verifyReceipt` (ADR-0029): tier 1 from RPC events (exact event, Kinlock contract, successful call, known schema version), tier 2 confirmed with `get_lock` after the indexer event lookup; reasons verified / not_found / mismatch / unverifiable. Real testnet release, decline and refund receipts verified; tampered references rejected |
 | 2026-10-07 | kinlock-sdk feat/indexer-event-lookup | sdk | M2-06 IN PROGRESS | List API `GET /events/:txHash/:eventIndex`: which lock and tranche a receipt refers to, as a lookup aid for tier-2 receipt verification (proof stays on chain). Started while M2-02 is IN PROGRESS (local-network run pending), with owner approval |
