@@ -192,3 +192,28 @@ describe("GET /health", () => {
     expect(body).toMatchObject({ status: "unknown", latestLedger: null, indexedLedger });
   });
 });
+
+describe("GET /events/:txHash/:eventIndex", () => {
+  const RELEASE_TX = fixture.events.find(
+    (e) => (e.topicJson[0] as { symbol: string }).symbol === "released",
+  );
+
+  it("returns the stored event with its lock id and fields", async () => {
+    const { status, body } = await get(`/events/${RELEASE_TX?.txHash}/1`);
+    expect(status).toBe(200);
+    expect(body.source).toBe("indexer");
+    expect(body.event).toMatchObject({
+      type: "Released",
+      schemaVersion: 1,
+      txHash: RELEASE_TX?.txHash,
+      eventIndex: 1,
+      payload: { key: "1", idx: 0, amount: "50000000" },
+    });
+  });
+
+  it("404s an event it hasn't stored and 400s malformed input", async () => {
+    expect((await get(`/events/${RELEASE_TX?.txHash}/7`)).status).toBe(404);
+    expect((await get("/events/xyz/1")).status).toBe(400);
+    expect((await get(`/events/${RELEASE_TX?.txHash}/-1`)).status).toBe(400);
+  });
+});

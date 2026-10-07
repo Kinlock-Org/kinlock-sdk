@@ -37,6 +37,15 @@ export const LocksQuery = z.object({
 
 export const LockParams = z.object({ id: lockId });
 
+export const EventParams = z.object({
+  txHash: hex32,
+  eventIndex: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(2 ** 31 - 1),
+});
+
 export const PayeesQuery = z.object({
   /** One payee by its on-chain id (preflight's recent-payout-change check). */
   payee_id: hex32.optional(),
@@ -110,6 +119,19 @@ export interface IndexerMeta {
 
 export type LocksResponse = IndexerMeta & { locks: Lock[]; next: string | null };
 export type LockResponse = IndexerMeta & { lock: Lock & { tranches: Tranche[] } };
+/** A stored contract event. `payload` holds `key` (lock id or payee id) and the event's fields,
+ *  with integers as decimal strings. */
+export interface ChainEvent {
+  type: string;
+  schemaVersion: number;
+  ledger: number;
+  ledgerTime: string;
+  txHash: string;
+  eventIndex: number;
+  payload: Record<string, unknown>;
+}
+
+export type EventResponse = IndexerMeta & { event: ChainEvent };
 export type PayeesResponse = IndexerMeta & { payees: Payee[]; next: string | null };
 
 export interface HealthResponse {
