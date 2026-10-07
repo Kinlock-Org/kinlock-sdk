@@ -67,6 +67,9 @@ describe("GET /locks", () => {
     expect(
       (await get("/locks?state=Declined")).body.locks.map((l: { id: string }) => l.id),
     ).toEqual(["1"]);
+    expect(
+      (await get("/locks?state=Refunded")).body.locks.map((l: { id: string }) => l.id),
+    ).toEqual(["2"]);
     expect((await get("/locks?state=Completed")).body.locks).toEqual([]);
   });
 

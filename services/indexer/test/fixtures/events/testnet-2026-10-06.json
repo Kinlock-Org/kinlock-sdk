@@ -1,5 +1,5 @@
 {
-  "source": "Stellar testnet RPC getEvents (xdrFormat=json), contract CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI, recorded 2026-10-06",
+  "source": "Stellar testnet RPC getEvents (xdrFormat=json), contract CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI, recorded 2026-10-06 (refund of lock 2 recorded 2026-10-07)",
   "events": [
     {
       "type": "contract",
@@ -653,6 +653,57 @@
             },
             "val": {
               "address": "GDPUY733T3UNZWG4EQMEBHBDGKD33YSFPOI2RB4AIK2JMOENKEXWK7ZG"
+            }
+          },
+          {
+            "key": {
+              "symbol": "schema_version"
+            },
+            "val": {
+              "u32": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "contract",
+      "ledger": 5067048,
+      "ledgerClosedAt": "2026-10-07T07:40:27Z",
+      "contractId": "CCSHDQFRYFC3AHV5NE6ULQW6X2CMG5RPANBORDXJGSUD6UKECASJQBRI",
+      "id": "0021762805447303168-0000000001",
+      "operationIndex": 0,
+      "transactionIndex": 10,
+      "txHash": "7316fe69be62f697df4676aee00318c97e8380faf9bc14cd6286344a70aaa4b0",
+      "inSuccessfulContractCall": true,
+      "topicJson": [
+        {
+          "symbol": "refunded"
+        },
+        {
+          "u64": "2"
+        }
+      ],
+      "valueJson": {
+        "map": [
+          {
+            "key": {
+              "symbol": "amount"
+            },
+            "val": {
+              "i128": "30000000"
+            }
+          },
+          {
+            "key": {
+              "symbol": "reason"
+            },
+            "val": {
+              "vec": [
+                {
+                  "symbol": "Expired"
+                }
+              ]
             }
           },
           {

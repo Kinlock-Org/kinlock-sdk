@@ -41,23 +41,12 @@ async function drain(d: IngestDeps): Promise<number> {
   }
 }
 
-const lastEvent = fixture.events[fixture.events.length - 1] as RpcEvent;
-
-/** A Refunded event for lock 2 in the shape testnet emits (synthetic: lock 2 hasn't expired yet). */
-const refundLock2: RpcEvent = {
-  ...lastEvent,
-  ledger: lastEvent.ledger + 100,
-  id: "0021712348171468800-0000000001",
-  txHash: "f".repeat(64),
-  topicJson: [{ symbol: "refunded" }, { u64: "2" }],
-  valueJson: {
-    map: [
-      { key: { symbol: "amount" }, val: { i128: "30000000" } },
-      { key: { symbol: "reason" }, val: { vec: [{ symbol: "Expired" }] } },
-      { key: { symbol: "schema_version" }, val: { u32: 1 } },
-    ],
-  },
-};
+/** The real refund of lock 2 on testnet (the fixture's last event), and everything before it. */
+const refundLock2 = fixture.events[fixture.events.length - 1] as RpcEvent;
+const beforeRefund = fixture.events.slice(0, -1);
+/** The same refund claiming one base unit more than lock 2 holds. */
+const badRefund = (): RpcEvent =>
+  JSON.parse(JSON.stringify(refundLock2).replace('"30000000"', '"30000001"'));
 
 /** The database after one clean replay of all fixture events, for comparisons. */
 let reference: Awaited<ReturnType<typeof snapshot>>;
@@ -73,7 +62,7 @@ describe("ingest: replaying the recorded testnet events", () => {
     const { db } = await freshDb();
     await drain(deps(db));
 
-    expect(await db.select().from(chainEvents)).toHaveLength(11);
+    expect(await db.select().from(chainEvents)).toHaveLength(12);
 
     const [l1, l2] = await db.select().from(locks).orderBy(locks.id);
     expect(l1).toMatchObject({
@@ -89,8 +78,9 @@ describe("ingest: replaying the recorded testnet events", () => {
       id: 2n,
       payeeId: PH,
       total: 30000000n,
-      state: "Open",
-      endReason: null,
+      returned: 30000000n,
+      state: "Refunded",
+      endReason: "Expired",
     });
     expect(l2?.expiresAt.toISOString()).toBe(new Date(1791303213 * 1000).toISOString());
 
@@ -131,13 +121,6 @@ describe("ingest: replaying the recorded testnet events", () => {
       await drain(deps(db, fakeRpc(fixture.events), size));
       expect(await snapshot(db)).toEqual(reference);
     }
-  });
-
-  it("records a refund as Refunded with its reason", async () => {
-    const { db } = await freshDb();
-    await drain(deps(db, fakeRpc([...fixture.events, refundLock2])));
-    const [l2] = await db.select().from(locks).where(eq(locks.id, 2n));
-    expect(l2).toMatchObject({ state: "Refunded", endReason: "Expired", returned: 30000000n });
   });
 });
 
@@ -216,9 +199,8 @@ describe("ingest: stops instead of skipping", () => {
 
   it("stops when an event contradicts stored state (refund larger than the remainder)", async () => {
     const { db } = await freshDb();
-    const bad = JSON.parse(JSON.stringify(refundLock2).replace('"30000000"', '"30000001"'));
-    await drain(deps(db));
-    await expect(ingestBatch(deps(db, fakeRpc([...fixture.events, bad])))).rejects.toThrow(
+    await drain(deps(db, fakeRpc(beforeRefund)));
+    await expect(ingestBatch(deps(db, fakeRpc([...beforeRefund, badRefund()])))).rejects.toThrow(
       InconsistentStateError,
     );
     const [l2] = await db.select().from(locks).where(eq(locks.id, 2n));
@@ -228,8 +210,7 @@ describe("ingest: stops instead of skipping", () => {
 
   it("rolls back the whole batch when a later event in it fails", async () => {
     const { db } = await freshDb();
-    const bad = JSON.parse(JSON.stringify(refundLock2).replace('"30000000"', '"30000001"'));
-    const d = deps(db, fakeRpc([...fixture.events, bad]), 100);
+    const d = deps(db, fakeRpc([...beforeRefund, badRefund()]), 100);
     await expect(ingestBatch(d)).rejects.toThrow(InconsistentStateError);
     expect(await snapshot(db)).toEqual({ chainEvents: [], locks: [], tranches: [], payees: [] });
     expect(await db.select().from(indexerCursor)).toHaveLength(0);
