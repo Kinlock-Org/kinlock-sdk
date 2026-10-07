@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const methods = {
   get_lock: vi.fn(),
+  get_payee: vi.fn(),
   create_lock: vi.fn(),
   release: vi.fn(),
   refund: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock("@kinlock/contract", () => ({
   }),
 }));
 
-const { createLock, decline, getLock, refund, release } = await import("../client.js");
+const { createLock, decline, getLock, getPayee, refund, release } = await import("../client.js");
 const { KinlockError } = await import("../errors.js");
 
 const config = {
@@ -222,5 +223,44 @@ describe("release, refund, decline", () => {
     await expect(
       release(config, { lockId: 1n, trancheIndex: 1.5 }, signer(PAYOUT)),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  });
+});
+
+describe("getPayee", () => {
+  it("maps the chain payee to SDK types (hex meta hash, status and category names)", async () => {
+    methods.get_payee.mockResolvedValue(
+      tx(
+        new Ok({
+          payout: PAYOUT,
+          category: { tag: "School", values: undefined },
+          status: { tag: "Suspended", values: undefined },
+          status_changed_at: 1791300000n,
+          attester: SENDER,
+          meta_hash: Buffer.from(H2, "hex"),
+          registered_at: 1791200000n,
+        }),
+      ),
+    );
+    expect(await getPayee(config, H1)).toEqual({
+      payout: PAYOUT,
+      category: "School",
+      status: "Suspended",
+      statusChangedAt: 1791300000n,
+      attester: SENDER,
+      metaHash: H2,
+      registeredAt: 1791200000n,
+    });
+    expect(methods.get_payee).toHaveBeenCalledWith({ payee_id: Buffer.from(H1, "hex") });
+    expect(constructed[0]).not.toHaveProperty("publicKey");
+  });
+
+  it("returns null for an unregistered payee, throws other errors, rejects bad ids", async () => {
+    methods.get_payee.mockResolvedValue(
+      tx(new Err({ message: "PayeeNotFound: no payee with this ID." })),
+    );
+    expect(await getPayee(config, H1)).toBeNull();
+    methods.get_payee.mockResolvedValue(tx(new Err({ message: "NotInitialized: no config." })));
+    await expect(getPayee(config, H1)).rejects.toMatchObject({ contractError: "NotInitialized" });
+    await expect(getPayee(config, "XY")).rejects.toMatchObject({ code: "INVALID_INPUT" });
   });
 });
