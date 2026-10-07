@@ -29,7 +29,9 @@
     "prepublishOnly": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@kinlock/contract": "https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz",
     "@stellar/stellar-sdk": "17.2.1",
+    "buffer": "6.0.3",
     "zod": "4.6.5"
   }
 }
