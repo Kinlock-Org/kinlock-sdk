@@ -10,6 +10,13 @@ export type { ClaimLinkParts, RequestLinkParts, RequestTranche } from "./links.j
 export { buildClaimLink, buildRequestLink, parseClaimLink, parseRequestLink } from "./links.js";
 export type { PreflightParams, PreflightResult } from "./preflight.js";
 export { preflight } from "./preflight.js";
-export type { ReceiptRef, VerifyReceiptResult } from "./receipts.js";
+export type {
+  ReceiptKind,
+  ReceiptRef,
+  VerificationTier,
+  VerifiedReceipt,
+  VerifyReceiptReason,
+  VerifyReceiptResult,
+} from "./receipts.js";
 export { verifyReceipt } from "./receipts.js";
 export * from "./types.js";
