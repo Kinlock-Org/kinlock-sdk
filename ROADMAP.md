@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 10 | 4 | 5 | 0 | 0 | 0 | 53% |
+| 3 SDK + indexer | 19 | 10 | 5 | 4 | 0 | 0 | 0 | 53% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **40** | **13** | **121** | **0** | **25** | **0** | **23%** |
+| **All** | **199** | **40** | **14** | **120** | **0** | **25** | **0** | **23%** |
 
 ---
 
@@ -262,7 +262,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | ID | Task | Repo | Pri | Status | Depends on | Done when |
 |---|---|---|---|---|---|---|
 | M2-01 | Scaffold `kinlock-sdk`: pnpm workspace, tsconfig, lint, CI, Postgres `docker-compose` | sdk | P0 | DONE | G1 | CI green on skeleton |
-| M2-02 | SDK `client`: `createLock`, `release`, `refund`, `decline`, `getLock` (chain reads) | sdk | P0 | TODO | M1-18 | Works against local and testnet |
+| M2-02 | SDK `client`: `createLock`, `release`, `refund`, `decline`, `getLock` (chain reads) | sdk | P0 | IN PROGRESS | M1-18 | Works against local and testnet |
 | M2-03 | SDK `hash` and `links`: `ref_hash`, `buildClaimLink`, `parseClaimLink`, request links | sdk | P0 | DONE | M2-02 | Fragment never leaves the client; round-trip tests |
 | M2-04 | SDK `format`: bigint ↔ decimal strings; 7-decimal USDC formatting | sdk | P0 | DONE | M2-01 | No `number` used for money; edge-case tests |
 | M2-05 | SDK `preflight`: balance, payee Active, recent payout change, duplicate `ref_hash`, authorized trustline | sdk | P0 | TODO | M2-02 | Each check has a test |
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-07 | kinlock-sdk feat/sdk-client | sdk | M2-02 IN PROGRESS | SDK client over `@kinlock/contract` 0.1.0 (GitHub Release): `createLock`, `release`, `refund`, `decline` (build, simulate, wallet signs, submit) and chain-only `getLock`, with config and signer parameters (ADR-0027). Verified on testnet (create, read, release, refused early refund, decline); local-network run not done (no Docker on the dev machine) |
 | 2026-10-07 | kinlock-sdk chore/sdk-github-release | sdk | M2-17 IN PROGRESS (unchanged), DEC-03 amended | `publish` workflow attaches the packed `@kinlock/sdk` tarball to a GitHub Release on `sdk-vX.Y.Z` (ADR-0026) instead of publishing to npm; no publish secret; ADR-0026 synced |
 | 2026-10-07 | kinlock-sdk docs/indexer-testnet-deployed | sdk | M2-18 IN PROGRESS (unchanged) | Indexer live on Railway testnet (https://indexer-production-705a.up.railway.app): caught up, registry join working, refund of lock 2 indexed within seconds. Postgres PITR enabled and a point-in-time restore into a new service succeeded; still open: daily schedule refused on the current plan, and the restored data not yet compared against live |
 | 2026-10-07 | kinlock-sdk test/indexer-real-refund-fixture | sdk | no row changes | Indexer fixtures: add the real testnet `refunded` event for lock 2 (tx 7316fe69…) and replace the synthetic refund in the tests; replay now ends with lock 2 Refunded/Expired |

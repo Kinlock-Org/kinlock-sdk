@@ -20,9 +20,15 @@ importers:
 
   packages/sdk:
     dependencies:
+      '@kinlock/contract':
+        specifier: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz
+        version: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz
       '@stellar/stellar-sdk':
         specifier: 17.2.1
         version: 17.2.1
+      buffer:
+        specifier: 6.0.3
+        version: 6.0.3
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -614,6 +620,10 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@kinlock/contract@https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz':
+    resolution: {tarball: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz}
+    version: 0.1.0
+
   '@noble/ed25519@3.2.0':
     resolution: {integrity: sha512-criDgRlnUA09hchYrTy/JUWPIEap5rZxQe6wDWzRx51oWWpDRcUpuNzlgPxDJaOK6AsW9c0wKcj3rKRv6t+bPQ==}
 
@@ -916,11 +926,17 @@ packages:
   axios@1.20.0:
     resolution: {integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==}
 
+  base64-js@1.5.1:
+    resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+
   bignumber.js@11.1.5:
     resolution: {integrity: sha512-6WmzCNtUnfKpbozq+hOgWaZMMzORmYBwF1xZScyoIX3QRYWeKTtxxwDOW5tIz7C9BdjkIYHGTcelCLkXg0mndw==}
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
+
+  buffer@6.0.3:
+    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -1206,6 +1222,9 @@ packages:
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
+
+  ieee754@1.2.1:
+    resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
   ipaddr.js@2.5.0:
     resolution: {integrity: sha512-aq+t5NAc+cS6rZQQVWC2x98CPqGtKKTMDd4Gaodv0wShnItdKg/51djkGJ1hqH+Oy0ivDftCbSLCQob8zso01w==}
@@ -1921,6 +1940,14 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
+  '@kinlock/contract@https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz':
+    dependencies:
+      '@stellar/stellar-sdk': 17.2.1
+      buffer: 6.0.3
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
   '@noble/ed25519@3.2.0': {}
 
   '@noble/hashes@2.4.0': {}
@@ -2128,9 +2155,16 @@ snapshots:
       - debug
       - supports-color
 
+  base64-js@1.5.1: {}
+
   bignumber.js@11.1.5: {}
 
   buffer-from@1.1.2: {}
+
+  buffer@6.0.3:
+    dependencies:
+      base64-js: 1.5.1
+      ieee754: 1.2.1
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
@@ -2400,6 +2434,8 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
+
+  ieee754@1.2.1: {}
 
   ipaddr.js@2.5.0: {}
 
