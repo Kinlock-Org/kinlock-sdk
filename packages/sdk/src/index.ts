@@ -1,7 +1,7 @@
-/** Public API. Adding exports here is ask-first (AGENTS.md §8.2; additions in ADR-0025). */
+/** Public API. Adding exports here is ask-first (AGENTS.md §8.2; additions in ADR-0025, ADR-0030). */
 
 export type { CreateLockParams, KinlockConfig, Signer } from "./client.js";
-export { createLock, decline, getLock, refund, release } from "./client.js";
+export { createLock, decline, getLock, getPayee, refund, release } from "./client.js";
 export type { KinlockErrorCode } from "./errors.js";
 export { KinlockError, NotImplementedError } from "./errors.js";
 export { fromBaseUnits, toBaseUnits, USDC_DECIMALS } from "./format.js";

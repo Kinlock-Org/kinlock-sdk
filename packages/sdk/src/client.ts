@@ -8,12 +8,21 @@
  *
  * `getLock` reads CHAIN state and is the only read money-moving pages may use.
  */
-import { Client, type Lock as RawLock } from "@kinlock/contract";
+import { Client, type Lock as RawLock, type Payee as RawPayee } from "@kinlock/contract";
 import { StrKey } from "@stellar/stellar-sdk";
 import type { AssembledTransaction, Result, SignTransaction } from "@stellar/stellar-sdk/contract";
 import { Buffer } from "buffer";
 import { KinlockError } from "./errors.js";
-import type { Address, Hash32, Lock, LockState, TrancheInput } from "./types.js";
+import type {
+  Address,
+  Category,
+  Hash32,
+  Lock,
+  LockState,
+  Payee,
+  PayeeStatus,
+  TrancheInput,
+} from "./types.js";
 
 /** Which network and contract to talk to. */
 export interface KinlockConfig {
@@ -208,4 +217,32 @@ export async function getLock(config: KinlockConfig, lockId: bigint): Promise<Lo
     throw error;
   }
   return toLock(tx.result.unwrap());
+}
+
+function toPayee(raw: RawPayee): Payee {
+  return {
+    payout: raw.payout,
+    category: raw.category.tag as Category,
+    status: raw.status.tag as PayeeStatus,
+    statusChangedAt: raw.status_changed_at,
+    attester: raw.attester,
+    metaHash: hex(raw.meta_hash),
+    registeredAt: raw.registered_at,
+  };
+}
+
+/**
+ * Chain read of a registered payee (simulation; nothing is signed or sent). `null` if the payee
+ * isn't registered. Money pages use it for the refund rule (Revoked, or Suspended past grace);
+ * never backed by the indexer. ADR-0030.
+ */
+export async function getPayee(config: KinlockConfig, payeeId: Hash32): Promise<Payee | null> {
+  checkHash(payeeId, "payeeId");
+  const tx = await contractClient(config).get_payee({ payee_id: bytes32(payeeId) });
+  if (tx.result.isErr()) {
+    const error = contractError(tx.result.unwrapErr().message);
+    if (error.contractError === "PayeeNotFound") return null;
+    throw error;
+  }
+  return toPayee(tx.result.unwrap());
 }
