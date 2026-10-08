@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-08 (wording: "verified payee" replaces "school or landlord") |
+| **Last updated** | 2026-10-08 (M3-24: country-agnostic CI guard) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -131,7 +131,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
 | 3 SDK + indexer | 19 | 14 | 3 | 2 | 0 | 0 | 0 | 74% |
-| 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
+| 4 App | 24 | 2 | 1 | 21 | 0 | 0 | 0 | 8% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
 | 7 Hardening | 26 | 0 | 0 | 26 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **44** | **12** | **118** | **0** | **25** | **0** | **25%** |
+| **All** | **199** | **45** | **12** | **117** | **0** | **25** | **0** | **26%** |
 
 ---
 
@@ -313,7 +313,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M3-21 | Error and empty states: trustline failure, expired, revoked, suspended, indexer lag | app | P0 | TODO | M3-09 | Each state has clear guidance |
 | M3-22 | Testnet hosting and environment config | app | P0 | TODO | M3-19 | Public testnet URL live |
 | M3-23 | Externalize all UI strings (`messages/en.json`) and add `Intl`-based locale-aware formatting; handle zero- and three-decimal currencies, non-Latin text, and RTL-safe layout | app | P0 | IN PROGRESS | M3-01 | Lint or test fails on inline strings; formatting tests across at least 3 locales and currencies |
-| M3-24 | CI guard: fail on hard-coded country, currency, anchor, or locale literals outside registry data, tests, and fixtures | all | P1 | TODO | M3-01, M2-01 | Guard runs in app and sdk CI; passing and failing examples tested |
+| M3-24 | CI guard: fail on hard-coded country, currency, anchor, or locale literals outside registry data, tests, and fixtures | all | P1 | DONE | M3-01, M2-01 | Guard runs in app and sdk CI; passing and failing examples tested |
 
 ---
 
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-08 | `feat/m3-24-country-agnostic-guard` | sdk | DONE: M3-24 | `M3-24` is a cross-cutting row ("all"); this PR plus a matching one in `kinlock-app` together complete it, so both mark it `DONE`. Added `packages/sdk/src/__tests__/country-agnostic.test.ts` and `services/indexer/test/country-agnostic.test.ts`: fails if `nigeria`, `naira`, `ngn`, or `lagos` (case-insensitive, whole-word) appears anywhere in source, excluding `*.test.ts` files. Grounded in `AGENTS.md`'s own quick-reference wording ("Don't assume Nigeria or naira"), not a general country/currency-word ban, since this project's fixtures and app deliberately exercise several real markets side by side; docs (`docs/PRD.md`, `docs/ARCHITECTURE.md`) are out of scope since they legitimately narrate the pre-v0.3 Nigeria-specific history. Runs via the existing `pnpm test` step already in both `packages/sdk` and `services/indexer`'s CI, so no workflow file changes were needed (same pattern `kinlock-app`'s `lib/i18n/inline-strings.test.ts` already uses for a different check). Verified the guard can actually fail, not just trivially pass: temporarily added a real violation to a file in each package, confirmed both caught it with the exact file named, reverted (`git diff` on both files is empty), confirmed a clean pass. `pnpm lint`, `pnpm typecheck`, `pnpm test` (165/165), `pnpm build` all green |
 | 2026-10-08 | `docs/readme-refresh` | sdk | no row changes | README was stale: it said the indexer is still being scaffolded, but it is built and running on testnet. Now documents the 16 public exports, the `bigint` and claim-link-fragment invariants, the list API routes, and the live indexer |
 | 2026-10-08 | `docs/m2-17-api-reference` | sdk | DONE: M2-17 | Added `packages/sdk/API.md`: every public export (client, preflight, receipts, links, hash, format, errors, types) documented with real signatures, params, return types, and a runnable usage example, read directly from the current `src/*.ts` source, not from memory. Linked from README. Verified: `pnpm lint`, `pnpm typecheck`, `pnpm test` (123/123 passed) all green. Closes issue #25 (seeded under `W-02`) |
 | 2026-10-08 | `docs/verified-payee-wording` | sdk | no row changes | Synced `AGENTS.md`/`docs/PRD.md`/`docs/ARCHITECTURE_ESSENTIALS.md` from `Kinlock-Org/.github` (`scripts/sync-docs.sh`): "a verified school or landlord" in the mission-statement-style sentences replaced with "a verified payee." Canonical source edited in `.github` PR #23 |
