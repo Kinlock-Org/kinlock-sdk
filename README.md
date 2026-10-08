@@ -8,7 +8,7 @@ TypeScript SDK (`packages/sdk`) and the event indexer + list API (`services/inde
 
 > **Status: active development, testnet only.** The client (`createLock`, `release`, `refund`, `decline`, `getLock`, `getPayee`), preflight, and receipt verification are implemented and released (v0.3.0); the indexer is still being scaffolded. See `ROADMAP.md`.
 
-**Try it live (testnet):** [kinlock-app.vercel.app](https://kinlock-app.vercel.app)
+**Try it live (testnet):** [kinlock-app.vercel.app](https://kinlock-app.vercel.app) · **Docs:** [kinlock-org.github.io](https://kinlock-org.github.io)
 
 ## Quick start
 ```
