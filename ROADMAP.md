@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-08 (M2-17 API reference) |
+| **Last updated** | 2026-10-08 (wording: "verified payee" replaces "school or landlord") |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -525,6 +525,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 |---|---|---|---|---|
 | 2026-10-08 | `docs/readme-refresh` | sdk | no row changes | README was stale: it said the indexer is still being scaffolded, but it is built and running on testnet. Now documents the 16 public exports, the `bigint` and claim-link-fragment invariants, the list API routes, and the live indexer |
 | 2026-10-08 | `docs/m2-17-api-reference` | sdk | DONE: M2-17 | Added `packages/sdk/API.md`: every public export (client, preflight, receipts, links, hash, format, errors, types) documented with real signatures, params, return types, and a runnable usage example, read directly from the current `src/*.ts` source, not from memory. Linked from README. Verified: `pnpm lint`, `pnpm typecheck`, `pnpm test` (123/123 passed) all green. Closes issue #25 (seeded under `W-02`) |
+| 2026-10-08 | `docs/verified-payee-wording` | sdk | no row changes | Synced `AGENTS.md`/`docs/PRD.md`/`docs/ARCHITECTURE_ESSENTIALS.md` from `Kinlock-Org/.github` (`scripts/sync-docs.sh`): "a verified school or landlord" in the mission-statement-style sentences replaced with "a verified payee." Canonical source edited in `.github` PR #23 |
 | 2026-10-08 | `docs/docs-site-link` | sdk | no row changes (org row W-10 tracked in `.github`) | Linked the new hosted docs site (`kinlock-org.github.io`) from README |
 | 2026-10-08 | `docs/live-app-link` | sdk | no row changes | Linked the live testnet app (`kinlock-app.vercel.app`, `M3-22`) from README; also set as the repo's GitHub "Website" field |
 | 2026-10-07 | `docs/scf-readiness-fixes` | sdk | no row changes (org rows W-09/F-12 tracked in `.github`) | Part of an org-wide SCF open-source readiness audit (see `.github` `docs/scf-readiness.md`): filled the unfilled `Copyright [yyyy] [name of copyright owner]` placeholder in `LICENSE` and added `ISSUE_TEMPLATE/config.yml` (GitHub's community-profile check was reporting `issue_template: false` despite templates existing) |
