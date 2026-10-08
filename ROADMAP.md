@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-08 (docs site link) |
+| **Last updated** | 2026-10-08 (M2-17 API reference) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 12 | 2 | 5 | 0 | 0 | 0 | 63% |
 | 1 M0 Validate | 17 | 0 | 1 | 16 | 0 | 0 | 0 | 0% |
 | 2 Contract + registry | 36 | 16 | 5 | 15 | 0 | 0 | 0 | 44% |
-| 3 SDK + indexer | 19 | 13 | 4 | 2 | 0 | 0 | 0 | 68% |
+| 3 SDK + indexer | 19 | 14 | 3 | 2 | 0 | 0 | 0 | 74% |
 | 4 App | 24 | 1 | 1 | 22 | 0 | 0 | 0 | 4% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 8 | 1 | 0 | 7 | 0 | 0 | 0 | 13% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **199** | **43** | **13** | **118** | **0** | **25** | **0** | **25%** |
+| **All** | **199** | **44** | **12** | **118** | **0** | **25** | **0** | **25%** |
 
 ---
 
@@ -277,7 +277,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-14 | Indexer tests: fixture replay, idempotency, cursor recovery, mixed versions | sdk | P0 | IN PROGRESS | M2-10 | Replay twice yields identical DB |
 | M2-15 | Lag alerting and health metric | sdk | P1 | TODO | M2-12 | Alert fires in a simulated lag test |
 | M2-16 | Implement tier-3 verification and backfill per `M0-09` decision | sdk | P1 | TODO | M0-09, M2-06 | Old receipts verify; backfill fills a deliberate gap |
-| M2-17 | SDK docs and API reference; publish testnet package versions | sdk | P0 | IN PROGRESS | M2-07 | Published; docs match exports |
+| M2-17 | SDK docs and API reference; publish testnet package versions | sdk | P0 | DONE | M2-07 | Published; docs match exports |
 | M2-18 | Indexer container, testnet deployment, managed Postgres, daily backups | sdk | P0 | IN PROGRESS | M2-14 | Running on testnet; restore tested once |
 | M2-19 | Indexer and list API: store and filter payees by `country` and `local_currency` (display and filter only) | sdk | P0 | DONE | M2-13, M1-29 | `/payees?country=` works; no country logic elsewhere |
 
@@ -523,6 +523,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-08 | `docs/m2-17-api-reference` | sdk | DONE: M2-17 | Added `packages/sdk/API.md`: every public export (client, preflight, receipts, links, hash, format, errors, types) documented with real signatures, params, return types, and a runnable usage example, read directly from the current `src/*.ts` source, not from memory. Linked from README. Verified: `pnpm lint`, `pnpm typecheck`, `pnpm test` (123/123 passed) all green. Closes issue #25 (seeded under `W-02`) |
 | 2026-10-08 | `docs/docs-site-link` | sdk | no row changes (org row W-10 tracked in `.github`) | Linked the new hosted docs site (`kinlock-org.github.io`) from README |
 | 2026-10-08 | `docs/live-app-link` | sdk | no row changes | Linked the live testnet app (`kinlock-app.vercel.app`, `M3-22`) from README; also set as the repo's GitHub "Website" field |
 | 2026-10-07 | `docs/scf-readiness-fixes` | sdk | no row changes (org rows W-09/F-12 tracked in `.github`) | Part of an org-wide SCF open-source readiness audit (see `.github` `docs/scf-readiness.md`): filled the unfilled `Copyright [yyyy] [name of copyright owner]` placeholder in `LICENSE` and added `ISSUE_TEMPLATE/config.yml` (GitHub's community-profile check was reporting `issue_template: false` despite templates existing) |

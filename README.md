@@ -21,5 +21,6 @@ pnpm typecheck && pnpm build
 - `docs/ARCHITECTURE_ESSENTIALS.md` (short; read at the start of every task)
 - `AGENTS.md` (rules for humans and agents) and `CLAUDE.md`
 - `ROADMAP.md`: **every PR updates it**
+- [`packages/sdk/API.md`](packages/sdk/API.md): every public export, with params, return types, and usage examples
 
 Docs in `docs/` are read-only copies synced from [Kinlock-Org/.github](https://github.com/Kinlock-Org/.github).
