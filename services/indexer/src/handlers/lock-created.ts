@@ -34,3 +34,8 @@ export const lockCreatedV1: EventHandler = async (db, event, ctx) => {
     })),
   );
 };
+
+/** Forward-compatible hypothetical v2 shape for M2-10/M2-14 coverage. */
+export const lockCreatedV2: EventHandler = async (db, event, ctx) => {
+  return lockCreatedV1(db, event, ctx);
+};

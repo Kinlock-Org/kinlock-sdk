@@ -12,6 +12,8 @@ import {
   fixture,
   fixtureLocks,
   freshDb,
+  mixedFixture,
+  mixedFixtureLocks,
   START_LEDGER,
   snapshot,
 } from "./helpers/fixtures.js";
@@ -25,6 +27,21 @@ function deps(db: Db, rpc: RpcClient = fakeRpc(fixture.events), pageSize = 3): I
     db,
     rpc,
     locks: fixtureLocks(),
+    contractId: CONTRACT_ID,
+    startLedger: START_LEDGER,
+    pageSize,
+  };
+}
+
+function mixedDeps(
+  db: Db,
+  rpc: RpcClient = fakeRpc(mixedFixture.events),
+  pageSize = 3,
+): IngestDeps {
+  return {
+    db,
+    rpc,
+    locks: mixedFixtureLocks(),
     contractId: CONTRACT_ID,
     startLedger: START_LEDGER,
     pageSize,
@@ -50,11 +67,16 @@ const badRefund = (): RpcEvent =>
 
 /** The database after one clean replay of all fixture events, for comparisons. */
 let reference: Awaited<ReturnType<typeof snapshot>>;
+let mixedReference: Awaited<ReturnType<typeof snapshot>>;
 
 beforeAll(async () => {
   const { db } = await freshDb();
   await drain(deps(db));
   reference = await snapshot(db);
+
+  const { db: mDb } = await freshDb();
+  await drain(mixedDeps(mDb));
+  mixedReference = await snapshot(mDb);
 }, 60_000);
 
 describe("ingest: replaying the recorded testnet events", () => {
@@ -213,6 +235,128 @@ describe("ingest: stops instead of skipping", () => {
     const d = deps(db, fakeRpc([...beforeRefund, badRefund()]), 100);
     await expect(ingestBatch(d)).rejects.toThrow(InconsistentStateError);
     expect(await snapshot(db)).toEqual({ chainEvents: [], locks: [], tranches: [], payees: [] });
+    expect(await db.select().from(indexerCursor)).toHaveLength(0);
+  });
+});
+
+describe("ingest: mixed schema_versions (v1 + v2) and stop-on-unknown (M2-10, M2-14)", () => {
+  it("processes a mixed v1/v2 event stream with interleaved versions on the same lock", async () => {
+    const { db } = await freshDb();
+    await drain(mixedDeps(db));
+
+    // Lock 1: v1 lock_created + v1 released tranche 0 + v1 declined remainder -> state Declined
+    const [l1] = await db.select().from(locks).where(eq(locks.id, 1n));
+    expect(l1?.state).toBe("Declined");
+    expect(l1?.total).toBe(100000000n);
+    expect(l1?.released).toBe(50000000n);
+    expect(l1?.returned).toBe(50000000n);
+
+    // Lock 2: v1 lock_created + v1 refunded -> state Refunded
+    const [l2] = await db.select().from(locks).where(eq(locks.id, 2n));
+    expect(l2?.state).toBe("Refunded");
+    expect(l2?.total).toBe(30000000n);
+    expect(l2?.returned).toBe(30000000n);
+
+    // Lock 3: created via v2, released tranche 0 via v2, released tranche 1 via v1 -> state Completed!
+    const [l3] = await db.select().from(locks).where(eq(locks.id, 3n));
+    expect(l3?.state).toBe("Completed");
+    expect(l3?.total).toBe(80000000n);
+    expect(l3?.released).toBe(80000000n);
+    expect(l3?.returned).toBe(0n);
+
+    // Verify tranches for lock 3 are both marked released without double counting
+    const t3 = await db
+      .select()
+      .from(tranches)
+      .where(eq(tranches.lockId, 3n))
+      .orderBy(tranches.idx);
+    expect(t3).toHaveLength(2);
+    expect(t3.map((x) => [x.idx, x.amount, x.released])).toEqual([
+      [0, 30000000n, true],
+      [1, 50000000n, true],
+    ]);
+
+    // Verify chain_events record true schema_versions for both v1 and v2 events
+    const evs = await db
+      .select()
+      .from(chainEvents)
+      .orderBy(chainEvents.ledger, chainEvents.eventIndex);
+    expect(evs).toHaveLength(mixedFixture.events.length);
+    const v2Evs = evs.filter((e) => e.schemaVersion === 2);
+    expect(v2Evs.length).toBeGreaterThanOrEqual(2);
+    const v1Evs = evs.filter((e) => e.schemaVersion === 1);
+    expect(v1Evs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("gives an identical database when mixed stream is replayed twice from start", async () => {
+    const { db } = await freshDb();
+    await drain(mixedDeps(db));
+    await db.delete(indexerCursor); // force replay over already-stored events
+    await drain(mixedDeps(db));
+    expect(await snapshot(db)).toEqual(mixedReference);
+  });
+
+  it("gives the same database whatever the page size for mixed stream", async () => {
+    for (const size of [1, 4, 100]) {
+      const { db } = await freshDb();
+      await drain(mixedDeps(db, fakeRpc(mixedFixture.events), size));
+      expect(await snapshot(db)).toEqual(mixedReference);
+    }
+  });
+
+  it("stops on schema_version 0 and unknown schema_version 99 without advancing cursor or writing dirty events", async () => {
+    for (const badVer of [0, 99]) {
+      const { db } = await freshDb();
+      // Corrupt event 0 schema_version to badVer
+      const corrupted = mixedFixture.events.map((e, i) =>
+        i === 0
+          ? {
+              ...e,
+              valueJson: JSON.parse(
+                JSON.stringify(e.valueJson).replace('{"u32":1}', `{"u32":${badVer}}`),
+              ),
+            }
+          : e,
+      );
+      await expect(ingestBatch(mixedDeps(db, fakeRpc(corrupted)))).rejects.toThrow(
+        UnsupportedEventError,
+      );
+      expect(await db.select().from(chainEvents)).toHaveLength(0);
+      expect(await db.select().from(indexerCursor)).toHaveLength(0);
+    }
+  });
+
+  it("stops on unknown v2 handler (e.g. unknown v99 on lock_created) and aborts batch", async () => {
+    const { db } = await freshDb();
+    // Corrupt event 12 (lock_created v2) schema_version to 99
+    const corrupted = mixedFixture.events.map((e, i) =>
+      i === 12
+        ? {
+            ...e,
+            valueJson: JSON.parse(JSON.stringify(e.valueJson).replace('{"u32":2}', '{"u32":99}')),
+          }
+        : e,
+    );
+    // Page size 100 so all events are attempted in single transaction
+    await expect(ingestBatch(mixedDeps(db, fakeRpc(corrupted), 100))).rejects.toThrow(
+      UnsupportedEventError,
+    );
+    expect(await db.select().from(chainEvents)).toHaveLength(0);
+    expect(await db.select().from(indexerCursor)).toHaveLength(0);
+  });
+
+  it("stops on missing schema_version and rolls back batch (DecodeError)", async () => {
+    const { db } = await freshDb();
+    const missingVer = mixedFixture.events.map((e, i) => {
+      if (i !== 0) return e;
+      const parsed = JSON.parse(JSON.stringify(e));
+      parsed.valueJson.map = parsed.valueJson.map.filter(
+        (entry: { key: { symbol?: string } }) => entry.key?.symbol !== "schema_version",
+      );
+      return parsed as RpcEvent;
+    });
+    await expect(ingestBatch(mixedDeps(db, fakeRpc(missingVer)))).rejects.toThrow(DecodeError);
+    expect(await db.select().from(chainEvents)).toHaveLength(0);
     expect(await db.select().from(indexerCursor)).toHaveLength(0);
   });
 });

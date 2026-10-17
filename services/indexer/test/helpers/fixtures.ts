@@ -19,6 +19,9 @@ interface Fixture {
 export const fixture: Fixture = JSON.parse(
   readFileSync(new URL("../fixtures/events/testnet-2026-10-06.json", import.meta.url), "utf8"),
 );
+export const mixedFixture: Fixture = JSON.parse(
+  readFileSync(new URL("../fixtures/events/mixed-versions.json", import.meta.url), "utf8"),
+);
 export const CONTRACT_ID = fixture.events[0]?.contractId ?? "";
 export const START_LEDGER = 5052300;
 /** Copy of kinlock-registry/fixtures (payees and attesters) as registered on testnet. */
@@ -82,6 +85,19 @@ export function fixtureLocks(): LockReader & { reads: bigint[] } {
     async tranches(lockId): Promise<TrancheSchedule[]> {
       reads.push(lockId);
       const t = fixture.tranches[lockId.toString()];
+      if (!t) throw new Error(`no fixture tranches for lock ${lockId}`);
+      return t.map((x) => ({ amount: BigInt(x.amount), unlockAt: BigInt(x.unlock_at) }));
+    },
+  };
+}
+
+export function mixedFixtureLocks(): LockReader & { reads: bigint[] } {
+  const reads: bigint[] = [];
+  return {
+    reads,
+    async tranches(lockId): Promise<TrancheSchedule[]> {
+      reads.push(lockId);
+      const t = mixedFixture.tranches[lockId.toString()];
       if (!t) throw new Error(`no fixture tranches for lock ${lockId}`);
       return t.map((x) => ({ amount: BigInt(x.amount), unlockAt: BigInt(x.unlock_at) }));
     },

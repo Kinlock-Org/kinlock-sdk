@@ -33,3 +33,8 @@ export const releasedV1: EventHandler = async (db, event) => {
     .set({ released, state: released === lock.total ? "Completed" : "Open" })
     .where(eq(locks.id, id));
 };
+
+/** Forward-compatible hypothetical v2 shape for M2-10/M2-14 coverage. */
+export const releasedV2: EventHandler = async (db, event, ctx) => {
+  return releasedV1(db, event, ctx);
+};
