@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-08 (W-05 resolved; 17 Wave issues seeded with seven new rows; issue format proofed against Drips' maintainer guide; the three pre-format issues triaged — app #16 re-emitted, app #15 and registry #7 closed as superseded; repo-side Changelog lines unioned back into canonical by `scripts/roadmap-merge`; that merge's ADR-link normalization anchored so quoted prose cannot be rewritten) |
+| **Last updated** | 2026-10-17 (M2-20 DONE: public HTTP reference for the list API published at `services/indexer/docs/API.md` with route-parity vitest suite in `services/indexer/test/api-docs.test.ts`) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 21 | 14 | 3 | 4 | 0 | 0 | 0 | 67% |
+| 3 SDK + indexer | 21 | 15 | 3 | 3 | 0 | 0 | 0 | 71% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **211** | **75** | **21** | **90** | **0** | **25** | **0** | **40%** |
+| **All** | **211** | **76** | **21** | **89** | **0** | **25** | **0** | **41%** |
 
 ---
 
@@ -285,7 +285,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-17 | SDK docs and API reference; publish testnet package versions | sdk | P0 | DONE | M2-07 | Published; docs match exports |
 | M2-18 | Indexer container, testnet deployment, managed Postgres, daily backups | sdk | P0 | IN PROGRESS | M2-14 | Running on testnet; restore tested once |
 | M2-19 | Indexer and list API: store and filter payees by `country` and `local_currency` (display and filter only) | sdk | P0 | DONE | M2-13, M1-29 | `/payees?country=` works; no country logic elsewhere |
-| M2-20 | Public HTTP reference for the list API (`services/indexer/docs/API.md`) with a route-parity test | sdk | P1 | TODO | M2-12 | All five routes documented with units and chain-vs-indexer labelling; renaming a route without editing the doc fails a test |
+| M2-20 | Public HTTP reference for the list API (`services/indexer/docs/API.md`) with a route-parity test | sdk | P1 | DONE | M2-12 | All five routes documented with units and chain-vs-indexer labelling; renaming a route without editing the doc fails a test |
 | M2-21 | Amount precision boundary pinned at the `i128` and `NUMERIC(39,0)` limits; any SDK-side guard approved on the issue first | sdk | P1 | TODO | M2-07 | Boundary cases tested and as-is behaviour recorded; no money path uses `number` |
 
 ---
@@ -535,6 +535,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-17 | `docs/indexer-public-api-reference` | sdk | M2-20 DONE | Public HTTP reference for the list API (`services/indexer/docs/API.md`) and route-parity test (`services/indexer/test/api-docs.test.ts`). All five routes documented with units, decimal amount scales (including 0.0000001 USDC minimal discrete unit as "1"), and indexer-vs-chain state distinctions (Hard Rule §3.3). Parity test verifies exact method+path correspondence against Fastify registered routes and asserts failure on route rename or omission. README links added. |
 | 2026-10-08 | `chore/roadmap-copy-back` (#39) | sdk | no row changes | Copy-back run: `ROADMAP.md` replaced with the merged canonical (`.github` main as of #31) in repo-root link form, and §3 recomputed with `scripts/roadmap-progress`. This is the step `roadmap-merge`'s header requires after every merge and that was skipped between 2026-10-06 and 2026-10-08, which is how the seven copies reached 92 divergent statuses. Verified in this checkout: the file equals canonical byte for byte apart from this entry and the ADR link prefix, `W-05` reads `DONE`, the seven Wave rows are present, duplicate row-ID scan is 0. No row, status, priority, dependency or **Done when** was authored in this repo. |
 | 2026-10-08 | `fix/roadmap-merge-link-anchor` | org | no row changes | Found while preparing the copy-back. `roadmap-merge`'s read normalization rewrote the docs-rooted ADR link form into the root-relative one on every copy so the two depths compare equal — correct for links, wrong for prose: the union entry above quotes both forms, so reading that line collapsed its own quote and emitted a Changelog entry contradicting itself, in a copy that no longer matched canonical line for line. Fixed by anchoring the replace on the numeric ADR filename that always follows the slash, so only real links are rewritten, and by re-wording the union entry to name the two forms as `docs/adr/` and `adr/` rather than spelling them as link text: **an entry that describes this rewrite must not itself be a string the rewrite can act on.** Verified: the anchored read leaves a quoted form byte-identical where the blanket replace corrupted it; a full `roadmap-merge` over all five copies against `b12d290` exits 0 with **0 lines** differing from canonical, which also confirms the union is complete; the one real link (`ADR-0026`) still normalizes both ways. No row, status, priority, dependency or **Done when** in this diff. |
 | 2026-10-08 | `chore/roadmap-changelog-union` | org | no row changes | Second `scripts/roadmap-merge` run now that the Wave-format PRs have merged (`.github` #26 and #27, contracts #31, sdk #38, app #43, registry #18). Three-way against `b12d290`, the revision where all five copies were last identical. The merge's **entire** output is four lines: the repo-side `docs/wave-issue-format` Changelog rows that each repo wrote into its own copy and canonical never saw. No row ID, status, priority, dependency or **Done when** moved — the seven new rows went in byte-identically, and `W-05`'s `TODO` → `DONE` stayed on the `org` row in canonical as §12 requires, so the repo copies' deliberately-untouched `TODO` was not merged back over it. §3 verified unchanged by `roadmap-progress`: 211 rows, 75 `DONE`, 40%. **Not in this PR:** the copy-back. Each repo's `ROADMAP.md` must be rewritten from the merged canonical, with the ADR links rewritten for the repo-root location, so all five copies are byte-identical again — that invariant is what makes `--ancestor` meaningful next time, and it needs four repo PRs that can only be cut after this lands. |
