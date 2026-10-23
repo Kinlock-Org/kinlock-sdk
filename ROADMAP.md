@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-17 (M2-21 DONE: amount precision boundaries pinned at i128 and NUMERIC(39,0) limits in sdk and indexer) |
+| **Last updated** | 2026-10-23 (added `M2-22`: anti-malware CI job for this repo) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 21 | 15 | 3 | 3 | 0 | 0 | 0 | 71% |
+| 3 SDK + indexer | 22 | 15 | 4 | 3 | 0 | 0 | 0 | 68% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **211** | **76** | **21** | **89** | **0** | **25** | **0** | **41%** |
+| **All** | **212** | **76** | **22** | **89** | **0** | **25** | **0** | **41%** |
 
 ---
 
@@ -287,6 +287,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-19 | Indexer and list API: store and filter payees by `country` and `local_currency` (display and filter only) | sdk | P0 | DONE | M2-13, M1-29 | `/payees?country=` works; no country logic elsewhere |
 | M2-20 | Public HTTP reference for the list API (`services/indexer/docs/API.md`) with a route-parity test | sdk | P1 | TODO | M2-12 | All five routes documented with units and chain-vs-indexer labelling; renaming a route without editing the doc fails a test |
 | M2-21 | Amount precision boundary pinned at the `i128` and `NUMERIC(39,0)` limits; any SDK-side guard approved on the issue first | sdk | P1 | DONE | M2-07 | Boundary cases tested and as-is behaviour recorded; no money path uses `number` |
+| M2-22 | CI `malware-scan` job: `pnpm audit` against the npm advisory database plus a Semgrep source scan on every PR | sdk | P1 | IN PROGRESS | — | Job runs on every PR; a known-vulnerable dependency or an injected malicious-pattern test case trips it; verified green on a real PR |
 
 ---
 
@@ -535,6 +536,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-23 | `ci/malware-scan` | sdk | M2-22 IN PROGRESS | Added `.github/workflows/malware-scan.yml`: `pnpm audit --audit-level=high` (npm advisory DB) plus a Semgrep source scan (`--config auto --error`) on every PR. Verified locally: `pnpm audit --audit-level=high` exits 0 (2 pre-existing low/moderate advisories below the `high` gate — `esbuild` via `drizzle-kit` dev dependency, `fastify` header-validation bypass — neither is this PR's scope, flagged separately); Semgrep (clean venv, v1.136.0) finds 0 findings across `packages/sdk/src` and `services/indexer/src`. Left `IN PROGRESS` pending the first real PR run confirming the job executes green in GitHub Actions. |
 | 2026-10-17 | `test/amount-precision-boundary` (#36) | sdk | DONE: M2-21 | Pin amount precision boundary at `i128` and `NUMERIC(39,0)` limits: characterise as-is behaviour of `toBaseUnits`/`fromBaseUnits` at `2^127-1`, `2^127`, 39-digit (`NUMERIC(39,0)` max), 40-digit, and `i128::MAX/10^7` boundaries without rounding; verify write path stops on `NUMERIC(39,0)` overflow in Postgres; no `number` type on money paths. 173 tests passing. |
 | 2026-10-08 | `chore/roadmap-copy-back` (#39) | sdk | no row changes | Copy-back run: `ROADMAP.md` replaced with the merged canonical (`.github` main as of #31) in repo-root link form, and §3 recomputed with `scripts/roadmap-progress`. This is the step `roadmap-merge`'s header requires after every merge and that was skipped between 2026-10-06 and 2026-10-08, which is how the seven copies reached 92 divergent statuses. Verified in this checkout: the file equals canonical byte for byte apart from this entry and the ADR link prefix, `W-05` reads `DONE`, the seven Wave rows are present, duplicate row-ID scan is 0. No row, status, priority, dependency or **Done when** was authored in this repo. |
 | 2026-10-08 | `fix/roadmap-merge-link-anchor` | org | no row changes | Found while preparing the copy-back. `roadmap-merge`'s read normalization rewrote the docs-rooted ADR link form into the root-relative one on every copy so the two depths compare equal — correct for links, wrong for prose: the union entry above quotes both forms, so reading that line collapsed its own quote and emitted a Changelog entry contradicting itself, in a copy that no longer matched canonical line for line. Fixed by anchoring the replace on the numeric ADR filename that always follows the slash, so only real links are rewritten, and by re-wording the union entry to name the two forms as `docs/adr/` and `adr/` rather than spelling them as link text: **an entry that describes this rewrite must not itself be a string the rewrite can act on.** Verified: the anchored read leaves a quoted form byte-identical where the blanket replace corrupted it; a full `roadmap-merge` over all five copies against `b12d290` exits 0 with **0 lines** differing from canonical, which also confirms the union is complete; the one real link (`ADR-0026`) still normalizes both ways. No row, status, priority, dependency or **Done when** in this diff. |
