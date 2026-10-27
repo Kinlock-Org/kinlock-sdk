@@ -19,25 +19,25 @@ const { lockId, txHash } = await createLock(
   config,
   {
     sender: "G...",
-    token: "C...",          // the USDC SAC address
-    payeeId: "ab12...",     // 32 bytes hex
+    token: "C...", // the USDC SAC address
+    payeeId: "ab12...", // 32 bytes hex
     tranches: [{ amount: 150_000_000n, unlockAt: 1_800_000_000n }],
-    refHash: "cd34...",     // 32 bytes hex, sha256(reference || salt)
+    refHash: "cd34...", // 32 bytes hex, sha256(reference || salt)
     expiresAt: 1_900_000_000n,
   },
   signer,
 );
 ```
 
-| Param | Type | Notes |
-|---|---|---|
-| `config` | `KinlockConfig` | `{ rpcUrl, networkPassphrase, contractId, allowHttp?, indexerUrl? }` |
-| `params.sender` | `Address` | Must equal `signer.address`, or this throws before building a transaction |
-| `params.token` | `Address` | The token's SAC contract address |
-| `params.payeeId` | `Hash32` | 32 bytes as lowercase hex |
-| `params.tranches` | `TrancheInput[]` | `{ amount: bigint, unlockAt: bigint }`; at least one, each `amount > 0n` |
-| `params.refHash` | `Hash32` | `sha256(reference ‖ salt)`; use `computeRefHash` to build it |
-| `params.expiresAt` | `bigint` | Unix seconds |
+| Param              | Type             | Notes                                                                     |
+| ------------------ | ---------------- | ------------------------------------------------------------------------- |
+| `config`           | `KinlockConfig`  | `{ rpcUrl, networkPassphrase, contractId, allowHttp?, indexerUrl? }`      |
+| `params.sender`    | `Address`        | Must equal `signer.address`, or this throws before building a transaction |
+| `params.token`     | `Address`        | The token's SAC contract address                                          |
+| `params.payeeId`   | `Hash32`         | 32 bytes as lowercase hex                                                 |
+| `params.tranches`  | `TrancheInput[]` | `{ amount: bigint, unlockAt: bigint }`; at least one, each `amount > 0n`  |
+| `params.refHash`   | `Hash32`         | `sha256(reference ‖ salt)`; use `computeRefHash` to build it              |
+| `params.expiresAt` | `bigint`         | Unix seconds                                                              |
 
 Returns `{ lockId: bigint, txHash: string }`. Throws `KinlockError` with code `INVALID_INPUT` for
 bad params checked client-side, `CONTRACT_ERROR` (with `contractError` set to the contract's
@@ -78,17 +78,21 @@ Runs five checks before a sender commits to `createLock`, in a fixed order. Retu
 
 ```ts
 const results = await preflight(config, {
-  sender: "G...", token: "C...", payeeId: "ab12...", total: 150_000_000n, refHash: "cd34...",
+  sender: "G...",
+  token: "C...",
+  payeeId: "ab12...",
+  total: 150_000_000n,
+  refHash: "cd34...",
 });
 ```
 
-| Check | Severity | Source | Meaning on fail |
-|---|---|---|---|
-| `sender_balance` | block | chain | Sender doesn't hold enough of the token |
-| `payee_active` | block | chain | Payee isn't registered, or isn't Active |
-| `payout_trustline_authorized` | block | chain | The payout account can't currently receive the token (missing/unauthorized trustline, or no room under the limit) |
-| `recent_payout_change` | warn | indexer | The payout address changed in the last 7 days (`RECENT_PAYOUT_CHANGE_WINDOW_SECS`) |
-| `duplicate_ref_hash` | warn | indexer | A lock with this exact reference already exists for this payee |
+| Check                         | Severity | Source  | Meaning on fail                                                                                                   |
+| ----------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------- |
+| `sender_balance`              | block    | chain   | Sender doesn't hold enough of the token                                                                           |
+| `payee_active`                | block    | chain   | Payee isn't registered, or isn't Active                                                                           |
+| `payout_trustline_authorized` | block    | chain   | The payout account can't currently receive the token (missing/unauthorized trustline, or no room under the limit) |
+| `recent_payout_change`        | warn     | indexer | The payout address changed in the last 7 days (`RECENT_PAYOUT_CHANGE_WINDOW_SECS`)                                |
+| `duplicate_ref_hash`          | warn     | indexer | A lock with this exact reference already exists for this payee                                                    |
 
 Each result is `{ check, status: "pass" | "fail" | "unknown", severity: "block" | "warn",
 messageKey }`. `"unknown"` means the check couldn't run (e.g. no `config.indexerUrl`, or the
@@ -123,7 +127,6 @@ const result = await verifyReceipt(config, { txHash: "ab12...", eventIndex: 0 })
 
 Claim links carry the reference and salt **only in the URL fragment**, which browsers never send
 to a server. Never log, persist, or transmit a claim link or anything parsed from one.
-
 - **`buildClaimLink(origin, { lockId, reference, salt })`** -> `"https://.../claim/{lockId}#r=...&s=..."`
 - **`parseClaimLink(link)`** -> `{ lockId, reference, salt }`
 - **`buildRequestLink(origin, { payeeId, reference, schedule })`** -> `"https://.../send?payee=...&ref=...&schedule=..."`. Request links carry **no authority**; they only pre-fill the sender's form.
@@ -138,11 +141,10 @@ to a server. Never log, persist, or transmit a claim link or anything parsed fro
 
 ## Amount formatting (`src/format.ts`)
 
-The *only* place base-unit/decimal conversion happens. USDC uses 7 decimals
+The _only_ place base-unit/decimal conversion happens. USDC uses 7 decimals
 (`USDC_DECIMALS`). Conversions are exact: more decimal places than the token has throws, never
 rounds, because a rounded amount is a different amount of money. Locale-aware display (`Intl`)
 belongs in the app, not here.
-
 - **`toBaseUnits(decimal, decimals = USDC_DECIMALS)`** -> `bigint`. `"12.5"` -> `125000000n`.
 - **`fromBaseUnits(amount, decimals = USDC_DECIMALS)`** -> `string`. `125000000n` -> `"12.5"`. Trailing zeros dropped; integers have no dot.
 
@@ -150,12 +152,12 @@ belongs in the app, not here.
 
 Every SDK function throws `KinlockError` (never a bare `Error`), with a stable `code`:
 
-| Code | Meaning |
-|---|---|
-| `INVALID_INPUT` / `INVALID_AMOUNT` / `INVALID_REFERENCE` / `INVALID_LINK` | Caught client-side before touching the network |
-| `CONTRACT_ERROR` | The contract rejected the call; `error.contractError` holds its error name (`kinlock-contracts` `errors.rs`), e.g. `"NotYetUnlocked"` |
-| `TX_FAILED` | Signing, submission, or confirmation failed, including the wallet declining |
-| `NOT_IMPLEMENTED` | Thrown by scaffolded functions that don't exist yet |
+| Code                                                                      | Meaning                                                                                                                               |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_INPUT` / `INVALID_AMOUNT` / `INVALID_REFERENCE` / `INVALID_LINK` | Caught client-side before touching the network                                                                                        |
+| `CONTRACT_ERROR`                                                          | The contract rejected the call; `error.contractError` holds its error name (`kinlock-contracts` `errors.rs`), e.g. `"NotYetUnlocked"` |
+| `TX_FAILED`                                                               | Signing, submission, or confirmation failed, including the wallet declining                                                           |
+| `NOT_IMPLEMENTED`                                                         | Thrown by scaffolded functions that don't exist yet                                                                                   |
 
 `error.message` is for developers (logs, error boundaries), never shown to an end user directly;
 the app maps `code`/`contractError` to a message-file key. `NotImplementedError` is a

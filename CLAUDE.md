@@ -14,16 +14,19 @@ The file above is the full rulebook. Everything below is **additional guidance s
 ## How to work
 
 ### Plan first, then wait when required
+
 - For anything beyond a small fix, **use plan mode**: list files to change, tests to add, invariants touched, and risks.
 - For contract changes, auth changes, storage/event changes, dependency additions, migrations, CI/deploy changes, or anything in `AGENTS.md` §2 "Ask a human first": **present the plan and stop for approval.** Don't start editing.
 
 ### Verify, don't assume
+
 - Run the commands for the repo (`AGENTS.md` §8) before saying something works.
 - Report results honestly: which commands ran, what passed, what failed, and what you couldn't run. Never say "tests pass" without running them.
 - If a failing test points at a real bug, fix the bug. Don't edit the test to match.
 - After a fix, run the **full** relevant suite, not just the one test.
 
 ### Stay in scope
+
 - Do what was asked. Don't add features, config options, or "while I'm here" refactors.
 - If you notice something unrelated that's broken or risky, **mention it at the end** instead of fixing it silently.
 - Prefer editing existing files. Don't create new files, abstractions, or docs unless the task needs them.
@@ -48,16 +51,19 @@ In your final summary to the human, state which roadmap rows you changed.
 ## Using Claude Code features
 
 ### Subagents
+
 Use subagents for **independent review**, not to bypass approval rules:
-- After any change to contract fund logic, have a fresh-context review pass check the change against the invariants in `ARCHITECTURE.md` §4.6 and the hard rules in `AGENTS.md` §3. The reviewer should try to *break* it: boundary times, missing trustlines, auth gaps, arithmetic overflow, state-before-transfer ordering.
+- After any change to contract fund logic, have a fresh-context review pass check the change against the invariants in `ARCHITECTURE.md` §4.6 and the hard rules in `AGENTS.md` §3. The reviewer should try to _break_ it: boundary times, missing trustlines, auth gaps, arithmetic overflow, state-before-transfer ordering.
 - Use read-only exploration subagents when you need to survey a large area of code without filling your own context.
 
 ### Context hygiene
+
 - Keep context lean. Summarize findings rather than pasting large files back.
 - Don't paste secrets, keys, or `.env` contents into the conversation, ever.
 - When context gets long, compact and keep: the task, the plan, decisions made, files touched, and open questions.
 
 ### Optional project setup (recommended, not required)
+
 Ask the human before creating any of these:
 - `.claude/settings.json` permission rules that **deny reading** `.env*` and Stellar identity/key files, and **deny** mainnet-targeting commands.
 - A hook that runs `cargo fmt` / `cargo clippy` (contracts) or lint/typecheck (TypeScript) after edits.
@@ -68,7 +74,6 @@ Verify exact configuration syntax against the current Claude Code documentation 
 ## Contract change review checklist
 
 Run this before you call any contract change finished. Report each item as pass/fail with evidence.
-
 - [ ] No country, currency, or geography logic in the contract (it stays country-agnostic)
 - [ ] No new path moves funds anywhere except `lock.payout` or `lock.sender`
 - [ ] `lock.payout` is never modified after creation

@@ -12,10 +12,10 @@ The TypeScript client for the `kinlock` contract (`packages/sdk`) and the event 
 
 ## Layout
 
-| Package | Name | What it is |
-|---|---|---|
-| `packages/sdk` | `@kinlock/sdk` v0.3.0 | Typed client: writes, chain reads, preflight, claim/request links, receipt verification |
-| `services/indexer` | `@kinlock/indexer` | Long-running poller: Soroban events → Postgres → Fastify list API |
+| Package            | Name                  | What it is                                                                              |
+| ------------------ | --------------------- | --------------------------------------------------------------------------------------- |
+| `packages/sdk`     | `@kinlock/sdk` v0.3.0 | Typed client: writes, chain reads, preflight, claim/request links, receipt verification |
+| `services/indexer` | `@kinlock/indexer`    | Long-running poller: Soroban events → Postgres → Fastify list API                       |
 
 Dependency flow: `kinlock-contracts` → generated bindings (`@kinlock/contract`) → `@kinlock/sdk` → `kinlock-app`.
 
@@ -26,7 +26,6 @@ import { createLock, getLock, preflight, buildClaimLink } from "@kinlock/sdk";
 ```
 
 Sixteen public exports, all documented in [`packages/sdk/API.md`](packages/sdk/API.md):
-
 - **Writes:** `createLock`, `release`, `refund`, `decline` — each builds, simulates, then hands the XDR to your signer, and submits. The SDK never holds a key.
 - **Chain reads:** `getLock`, `getPayee`.
 - **Links:** `buildClaimLink`, `parseClaimLink`, `buildRequestLink`, `parseRequestLink`.
@@ -34,7 +33,6 @@ Sixteen public exports, all documented in [`packages/sdk/API.md`](packages/sdk/A
 - **Primitives:** `toBaseUnits`, `fromBaseUnits`, `generateSalt`, `computeRefHash`, plus `USDC_DECIMALS`, `KinlockError`, `NotImplementedError` and the `Lock`/`Payee`/`Tranche` types.
 
 Two invariants the SDK enforces, because everything downstream relies on them:
-
 - **Money is `bigint` in code and a decimal string in JSON.** Never a `number`. USDC has 7 decimals and the only place formatting lives is `format.ts`.
 - **The reference and its salt exist only in the URL fragment.** `buildClaimLink` puts them in `#r=…&s=…`, which browsers never send to a server. On-chain you see only `ref_hash` = SHA-256 of the NFC-trimmed reference bytes concatenated with 16 raw salt bytes (ADR-0024). Nothing derived from the fragment is logged or transmitted.
 

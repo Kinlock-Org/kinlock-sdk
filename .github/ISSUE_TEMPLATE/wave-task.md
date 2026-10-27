@@ -1,4 +1,5 @@
 ---
+
 name: Wave task
 about: A scoped, self-contained task for an external or bounty-program contributor
 labels: wave
@@ -22,14 +23,12 @@ One to three sentences: what to build or fix, and what the world looks like when
 
 Where this sits today, with `path:line` evidence for each claim. Name the `docs/ARCHITECTURE.md`
 sections the task touches, because the mandatory review below points at them.
-
 -
 
 ## Before you start: mandatory context review
 
 Kinlock moves other people's money, so the docs are **binding constraints, not background reading**.
 They record decisions this task must not silently reopen. Read them in this order and tick each box:
-
 - [ ] `docs/ARCHITECTURE_ESSENTIALS.md` — start here, it is short (`AGENTS.md` §1)
 - [ ] `docs/ARCHITECTURE.md` — only the sections named in **Context** above
 - [ ] `docs/PRD.md` — if this task touches user-facing behaviour or scope
@@ -51,28 +50,23 @@ Then:
 
 Two to four bullets. Say which commitment this serves: a hard rule (§3), a gate, a pilot need, or a
 row's **Done when**. If the honest answer is "nicer", the issue is not ready to be filed.
-
 -
 
 ## Scope
 
-**In scope**
--
+## **In scope**
 
-**Do not touch** (security-sensitive or generated; changing these needs a human first — `AGENTS.md` §2, `docs/project_structure.md` §8)
--
+## **Do not touch** (security-sensitive or generated; changing these needs a human first — `AGENTS.md` §2, `docs/project_structure.md` §8)
 
 ## Suggested implementation
 
 Numbered steps, with the read-first documents in step 1. Say explicitly that an alternative approach
 is welcome and should be posted on the issue before building.
-
 1.
 
 ## Done means
 
 Binary and checkable, one line each. Anything a reviewer cannot verify by looking is not a criterion.
-
 - [ ]
 
 ## Tests
@@ -92,7 +86,7 @@ Every command, in the order that works, so a contributor on a clean machine is n
 ```
 
 Run every command and paste the real output in the PR. We do not accept "should pass" —
-`AGENTS.md` §6: *"You actually ran the commands."*
+`AGENTS.md` §6: _"You actually ran the commands."_
 
 ## Opening the pull request
 

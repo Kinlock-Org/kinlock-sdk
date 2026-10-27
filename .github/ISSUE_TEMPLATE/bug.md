@@ -1,4 +1,5 @@
 ---
+
 name: Bug
 about: Something doesn't work as documented
 labels: bug

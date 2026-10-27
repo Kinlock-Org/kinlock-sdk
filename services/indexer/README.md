@@ -18,21 +18,20 @@ pnpm build && pnpm start              # applies migrations, then runs the poller
 
 Testnet only. One service built from `services/indexer/Dockerfile` (selected by `railway.json`
 at the repo root) plus a Railway Postgres database.
-
 1. Create a Railway project, add **Postgres**, then add a service from the GitHub repo
    `Kinlock-Org/kinlock-sdk` (branch `main`). Railway reads `railway.json`.
 2. Set the service variables (no secrets in the repo):
 
-   | Variable | Value |
-   |---|---|
-   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (Railway reference variable) |
-   | `STELLAR_RPC_URLS` | `https://soroban-testnet.stellar.org` plus a second testnet provider, comma-separated |
-   | `STELLAR_NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015` |
-   | `KINLOCK_CONTRACT_ID` | `contract_id` from `kinlock-contracts/deployments/testnet.json` |
-   | `KINLOCK_START_LEDGER` | a ledger at or before the contract's first event (current testnet contract: `5052300`) |
-   | `REGISTRY_GIT_URL` | `https://github.com/Kinlock-Org/kinlock-registry` |
-   | `REGISTRY_SUBDIR` | `fixtures` (testnet payees) |
-   | `RAILWAY_DOCKERFILE_PATH` | `services/indexer/Dockerfile` (needed: `railway up` ignored `railway.json` and fell back to Railpack) |
+   | Variable                     | Value                                                                                                 |
+   | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`               | `${{Postgres.DATABASE_URL}}` (Railway reference variable)                                             |
+   | `STELLAR_RPC_URLS`           | `https://soroban-testnet.stellar.org` plus a second testnet provider, comma-separated                 |
+   | `STELLAR_NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015`                                                                   |
+   | `KINLOCK_CONTRACT_ID`        | `contract_id` from `kinlock-contracts/deployments/testnet.json`                                       |
+   | `KINLOCK_START_LEDGER`       | a ledger at or before the contract's first event (current testnet contract: `5052300`)                |
+   | `REGISTRY_GIT_URL`           | `https://github.com/Kinlock-Org/kinlock-registry`                                                     |
+   | `REGISTRY_SUBDIR`            | `fixtures` (testnet payees)                                                                           |
+   | `RAILWAY_DOCKERFILE_PATH`    | `services/indexer/Dockerfile` (needed: `railway up` ignored `railway.json` and fell back to Railpack) |
 
    Railway provides `PORT`. Generate a public domain for the service to reach the API.
 3. Deploy. The container clones the registry, applies migrations, then starts. Check
