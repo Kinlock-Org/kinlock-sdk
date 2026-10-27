@@ -27,7 +27,6 @@ Docs are expected at `docs/` in each repo. If they're missing, say so and ask wh
 ## 2. How much autonomy you have
 
 ### Do freely
-
 - Write and improve tests, docs, comments, types.
 - UI components, copy fixes, accessibility, styling in `kinlock-app`.
 - Registry tooling and schema validation in `kinlock-registry`.
@@ -35,7 +34,6 @@ Docs are expected at `docs/` in each repo. If they're missing, say so and ask wh
 - Bug fixes outside the security-critical paths listed below.
 
 ### Ask a human first (and wait)
-
 - Any change to contract **entry points, storage layout, events, invariants, constants, or errors**.
 - Any change to who can call what (auth), or to where funds can go.
 - New dependencies (state why, size, maintenance status, alternatives considered).
@@ -46,7 +44,6 @@ Docs are expected at `docs/` in each repo. If they're missing, say so and ask wh
 - Changing a P0 row's priority, moving or redefining a gate, editing "What 100% readiness means," changing estimates, or dropping a P0/P1 row in `ROADMAP.md`.
 
 ### Never
-
 - Commit secrets, secret keys, seed phrases, `.env` files, or Stellar identity files.
 - Run anything against **mainnet**. Testnet and local only, unless a human explicitly says otherwise in this session.
 - Force-push, rewrite shared history, or delete branches you didn't create.
@@ -57,6 +54,7 @@ Docs are expected at `docs/` in each repo. If they're missing, say so and ask wh
 ## 3. Hard rules (the non-negotiables)
 
 These come from the architecture. Violating one is a bug even if tests pass.
+
 1. **No privileged path to locked funds.** Funds leave the contract only to `lock.payout` (snapshotted at creation) or `lock.sender`. Admin, attesters, pause switches, and upgrades-by-convenience must not create another path.
 2. **`lock.payout` is immutable.** Payout-address updates affect **new** locks only.
 3. **Chain is truth.** Money-moving pages (claim, release, refund, decline) read state from chain, **never** from Postgres. Postgres is for lists and dashboards.
@@ -87,13 +85,13 @@ These come from the architecture. Violating one is a bug even if tests pass.
 
 ## 5. Repositories and where you are
 
-| Repo                | What it is                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| Repo | What it is |
+|---|---|
 | `kinlock-contracts` | One Soroban contract `kinlock` (modules `registry`, `vault`), tests, deploy scripts, generated bindings |
-| `kinlock-sdk`       | `packages/sdk` (TS client) and `services/indexer` (events → Postgres → list API)                        |
-| `kinlock-app`       | Next.js web app                                                                                         |
-| `kinlock-registry`  | Public payee JSON, schema, hash-check CI                                                                |
-| `kinlock-ramp`      | **Conditional.** Does not exist until the M0 spike passes                                               |
+| `kinlock-sdk` | `packages/sdk` (TS client) and `services/indexer` (events → Postgres → list API) |
+| `kinlock-app` | Next.js web app |
+| `kinlock-registry` | Public payee JSON, schema, hash-check CI |
+| `kinlock-ramp` | **Conditional.** Does not exist until the M0 spike passes |
 
 Dependency flow: `contracts` → bindings → `sdk` → `app`. `registry` is data only.
 
@@ -102,21 +100,18 @@ Identify which repo you're in and apply its section in §8. Ignore sections for 
 ## 6. Workflow
 
 ### Before coding
-
 1. State the task in your own words and list your assumptions.
 2. Read `ARCHITECTURE_ESSENTIALS.md` and the relevant `ARCHITECTURE.md` sections.
 3. For anything non-trivial, write a short plan (files to touch, tests to add, risks) **before** editing. For anything in the "Ask first" list, stop after the plan and wait for approval.
 4. Prefer the smallest change that solves the problem.
 
 ### While coding
-
 - Edit existing files rather than creating parallel ones. Follow existing patterns.
 - Keep each change to one logical purpose. Don't mix refactors with behavior changes.
 - No dead code, commented-out code, or unresolved TODOs. If something is deferred, open an issue note in the PR description instead.
 - Put design decisions in an ADR (`docs/adr/NNNN-title.md`) when you change or add an architectural decision. Don't bury decisions in code comments.
 
 ### Definition of done
-
 A task is done only when **all** are true:
 - [ ] Code compiles/builds; linters, formatters, and type checks pass.
 - [ ] Tests added or updated for the change, and the full relevant suite passes.
@@ -129,7 +124,6 @@ A task is done only when **all** are true:
 If you couldn't run something (missing toolchain, no network), say exactly what you didn't run.
 
 ### Git
-
 - Branches: `feat/…`, `fix/…`, `docs/…`, `chore/…`, `test/…`.
 - Commits: Conventional Commits (`feat(vault): …`, `fix(indexer): …`). Small and focused.
 - Never commit to `main`. Open a PR.
@@ -268,28 +262,27 @@ pnpm e2e        # one happy-path Playwright test: request → send → claim →
 - Never add a payee on your own initiative. Payee additions come from a named attester through a reviewed PR.
 
 ### 8.5 `kinlock-ramp`
-
 Conditional. If this repo is being created or modified and the M0 anchor spike hasn't passed, stop and ask.
 
 ## 9. Domain glossary
 
-| Term                  | Meaning                                                                                                                                                                      |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lock**              | A funded record: total, tranches, expiry, payee, payout snapshot, `ref_hash`                                                                                                 |
-| **Tranche**           | A scheduled portion of a lock with its own `unlock_at` (max 12)                                                                                                              |
-| **Payee**             | A verified institution (School or Rent) that can receive locks                                                                                                               |
-| **Attester**          | A trusted party that verifies payees and vouches for them on-chain                                                                                                           |
-| **Payout**            | The payee's receiving address, snapshotted into each lock at creation                                                                                                        |
-| **Release**           | Payee claims a tranche                                                                                                                                                       |
-| **Decline**           | Payee returns the unreleased remainder to the sender                                                                                                                         |
-| **Refund**            | Sender reclaims the remainder after expiry, or on payee Revoked / Suspended + grace                                                                                          |
-| **`ref_hash`**        | `sha256(reference ‖ salt)`; the reference itself lives only in the claim link fragment                                                                                       |
-| **Claim link**        | `/claim/{id}#r=…&s=…`. The fragment never reaches servers                                                                                                                    |
-| **Request link**      | Payee-generated link that pre-fills the sender form; carries no authority                                                                                                    |
+| Term | Meaning |
+|---|---|
+| **Lock** | A funded record: total, tranches, expiry, payee, payout snapshot, `ref_hash` |
+| **Tranche** | A scheduled portion of a lock with its own `unlock_at` (max 12) |
+| **Payee** | A verified institution (School or Rent) that can receive locks |
+| **Attester** | A trusted party that verifies payees and vouches for them on-chain |
+| **Payout** | The payee's receiving address, snapshotted into each lock at creation |
+| **Release** | Payee claims a tranche |
+| **Decline** | Payee returns the unreleased remainder to the sender |
+| **Refund** | Sender reclaims the remainder after expiry, or on payee Revoked / Suspended + grace |
+| **`ref_hash`** | `sha256(reference ‖ salt)`; the reference itself lives only in the claim link fragment |
+| **Claim link** | `/claim/{id}#r=…&s=…`. The fragment never reaches servers |
+| **Request link** | Payee-generated link that pre-fills the sender form; carries no authority |
 | **Supported country** | A country on `supported-countries.json`: legal review done, attester(s) authorized, cash-out route or USDC holding practical. Registry/app policy, **not** enforced on-chain |
-| **`local_currency`**  | The payee's ISO 4217 currency from registry data; used for display-only indicative equivalents                                                                               |
-| **SAC**               | Stellar Asset Contract; how USDC is used from Soroban                                                                                                                        |
-| **TTL / archival**    | Soroban state expiry; locks must have TTL ≥ expiry + grace                                                                                                                   |
+| **`local_currency`** | The payee's ISO 4217 currency from registry data; used for display-only indicative equivalents |
+| **SAC** | Stellar Asset Contract; how USDC is used from Soroban |
+| **TTL / archival** | Soroban state expiry; locks must have TTL ≥ expiry + grace |
 
 ## 10. When you're unsure
 
@@ -309,14 +302,12 @@ If your change alters behavior, an event, a constant, an API, or an architectura
 **Every pull request, from any human or agent, in any repo, must update `ROADMAP.md` in the same PR.** There are no "too small to update" exceptions. If no rows change, add a Changelog entry that says "no row changes."
 
 ### At the start of a task
-
 - Open `ROADMAP.md` and find the row(s) your task belongs to (IDs like `M1-06`, `M3-14`).
 - If no row covers your work, you'll add one when you finish (see below).
 - Check the row's **Depends on** and **Status**. If it is `BLOCKED` or depends on rows that aren't `DONE`, stop and say so.
 - Set the row to `IN PROGRESS` when you open your branch or PR.
 
 ### Before you finish (every task, every PR)
-
 1. **Update row statuses** your change affects.
 2. **Add new rows** for any work you discovered or created. Use the next unused ID at the end of the correct phase table. Never reuse or renumber IDs.
 3. **Add a Changelog entry** (newest first): date, PR or issue reference, repo, rows touched, one-line summary.
@@ -324,7 +315,6 @@ If your change alters behavior, an event, a constant, an API, or an architectura
 5. **Resolve decisions**: if your PR settles an item in the Pending Decisions table, mark it resolved and link the ADR.
 
 ### Status rules
-
 - `DONE` only when your PR (or `main`) fully meets the row's **Done when** criteria **and you actually ran the verification commands.** Never mark `DONE` from reading code.
 - Partially finished? Leave `IN PROGRESS` and add a new row for the remainder.
 - `BLOCKED` must name what blocks it. `DEFERRED` and `DROPPED` need a reason. **Never delete rows.**
@@ -332,9 +322,8 @@ If your change alters behavior, an event, a constant, an API, or an architectura
 - On merge conflicts, rebase and keep **both** sides' row changes. Never overwrite another repo's rows.
 
 ### What needs a human first
-
 Changing a P0 row's priority, gate definitions, §1 "What 100% means," estimates, or dropping a P0/P1 row (see §2).
 
 ### Enforcement
-
 CI job `roadmap-check` fails any PR where `ROADMAP.md` is unchanged or the diff lacks a new Changelog entry. Reviewers must reject PRs without a roadmap update. Don't try to bypass the check.
+
