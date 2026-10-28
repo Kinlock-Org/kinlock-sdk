@@ -115,7 +115,11 @@ async function liveRpc(
   const event = events.find(
     (e) => e.txHash === ref.txHash && Number(e.id.split("-")[1]) === ref.eventIndex,
   );
-  if (event?.inSuccessfulContractCall !== true) return outcome("not_found");
+  if (!event) return outcome("not_found");
+  // `getTransaction` above already confirmed the whole transaction succeeded. Real RPC responses
+  // (confirmed against soroban-testnet.stellar.org) often omit `inSuccessfulContractCall` on an
+  // event rather than setting it true, so only reject when the RPC explicitly marks it false.
+  if (event.inSuccessfulContractCall === false) return outcome("not_found");
 
   const [nameTopic, keyTopic] = event.topic;
   const kind = nameTopic ? KINDS[String(scValToNative(nameTopic))] : undefined;
