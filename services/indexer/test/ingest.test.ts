@@ -215,4 +215,51 @@ describe("ingest: stops instead of skipping", () => {
     expect(await snapshot(db)).toEqual({ chainEvents: [], locks: [], tranches: [], payees: [] });
     expect(await db.select().from(indexerCursor)).toHaveLength(0);
   });
+
+  it("stops on write path when amount exceeds NUMERIC(39,0) column precision", async () => {
+    const { db } = await freshDb();
+    const d39 = 10n ** 39n - 1n;
+    const d40 = 10n ** 39n;
+
+    // 39 digits succeeds within NUMERIC(39,0)
+    await db.insert(locks).values({
+      id: 999n,
+      sender: "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM",
+      payeeId: KE,
+      payout: "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM",
+      token: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      total: d39,
+      refHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      expiresAt: new Date(1800000000 * 1000),
+      state: "Open",
+      createdAt: new Date(),
+      createdTx: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    });
+
+    const [inserted] = await db.select().from(locks).where(eq(locks.id, 999n));
+    expect(inserted?.total).toBe(d39);
+
+    // 40 digits fails on write path due to Postgres numeric precision
+    let caught: unknown;
+    try {
+      await db.insert(locks).values({
+        id: 1000n,
+        sender: "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM",
+        payeeId: KE,
+        payout: "GCLMHF7LAR34TSELDNEREYPTNE4K7MMESPS62WXE7ZDLPWIJUF3MC5QM",
+        token: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        total: d40,
+        refHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        expiresAt: new Date(1800000000 * 1000),
+        state: "Open",
+        createdAt: new Date(),
+        createdTx: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeDefined();
+    const causeMessage = String((caught as { cause?: { message?: string } })?.cause?.message ?? "");
+    expect(causeMessage).toMatch(/less than 10\^39|numeric field overflow/i);
+  });
 });

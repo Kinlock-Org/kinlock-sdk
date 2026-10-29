@@ -46,3 +46,62 @@ describe("fromBaseUnits", () => {
     }
   });
 });
+
+describe("amount precision and boundary characterisation (M2-21)", () => {
+  const I128_MAX = 2n ** 127n - 1n; // 170141183460469231731687303715884105727n (39 digits)
+  const ONE_ABOVE_I128_MAX = 2n ** 127n; // 170141183460469231731687303715884105728n (39 digits)
+  const DIGITS_39 = 10n ** 39n - 1n; // 999999999999999999999999999999999999999n (39 digits)
+  const DIGITS_40 = 10n ** 39n; // 1000000000000000000000000000000000000000n (40 digits)
+  const I128_MAX_DIV_1E7 = I128_MAX / 10_000_000n; // 17014118346046923173168730371588n
+
+  it("handles i128::MAX boundary: exactly 2^127 - 1 base units", () => {
+    const decimal = "17014118346046923173168730371588.4105727";
+    expect(toBaseUnits(decimal)).toBe(I128_MAX);
+    expect(fromBaseUnits(I128_MAX)).toBe(decimal);
+    expect(toBaseUnits(fromBaseUnits(I128_MAX))).toBe(I128_MAX);
+  });
+
+  it("characterises one above i128::MAX (2^127): accepted by SDK BigInt, rejected by contract i128 overflow", () => {
+    const decimal = "17014118346046923173168730371588.4105728";
+    expect(toBaseUnits(decimal)).toBe(ONE_ABOVE_I128_MAX);
+    expect(fromBaseUnits(ONE_ABOVE_I128_MAX)).toBe(decimal);
+    expect(toBaseUnits(fromBaseUnits(ONE_ABOVE_I128_MAX))).toBe(ONE_ABOVE_I128_MAX);
+  });
+
+  it("characterises 39-digit value (NUMERIC(39,0) maximum): accepted by SDK and Postgres column", () => {
+    const decimal = "99999999999999999999999999999999.9999999";
+    expect(toBaseUnits(decimal)).toBe(DIGITS_39);
+    expect(fromBaseUnits(DIGITS_39)).toBe(decimal);
+    expect(toBaseUnits(fromBaseUnits(DIGITS_39))).toBe(DIGITS_39);
+  });
+
+  it("characterises 40-digit value: accepted by SDK BigInt, rejected by Postgres NUMERIC(39,0)", () => {
+    const decimal = "100000000000000000000000000000000";
+    expect(toBaseUnits(decimal)).toBe(DIGITS_40);
+    expect(fromBaseUnits(DIGITS_40)).toBe(decimal);
+    expect(toBaseUnits(fromBaseUnits(DIGITS_40))).toBe(DIGITS_40);
+  });
+
+  it("characterises i128::MAX / 10^7 as largest plain integer amount for USDC", () => {
+    // 17014118346046923173168730371588 * 10^7 <= i128::MAX
+    const atLimit = toBaseUnits(I128_MAX_DIV_1E7.toString());
+    expect(atLimit).toBe(170141183460469231731687303715880000000n);
+    expect(atLimit <= I128_MAX).toBe(true);
+
+    // One above: 17014118346046923173168730371589 * 10^7 > i128::MAX
+    const aboveLimit = toBaseUnits((I128_MAX_DIV_1E7 + 1n).toString());
+    expect(aboveLimit).toBe(170141183460469231731687303715890000000n);
+    expect(aboveLimit > I128_MAX).toBe(true);
+  });
+
+  it("rejects negative human amounts in toBaseUnits while fromBaseUnits formats negative delta", () => {
+    expect(() => toBaseUnits("-1")).toThrow(expect.objectContaining({ code: "INVALID_AMOUNT" }));
+    expect(() => toBaseUnits("-0.1")).toThrow(expect.objectContaining({ code: "INVALID_AMOUNT" }));
+    expect(fromBaseUnits(-100n)).toBe("-0.00001");
+  });
+
+  it("never rounds fractions longer than asset decimals", () => {
+    expect(() => toBaseUnits("0.00000001")).toThrow(/never rounded/);
+    expect(() => toBaseUnits("17014118346046923173168730371588.41057271")).toThrow(/never rounded/);
+  });
+});
