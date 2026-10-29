@@ -3,7 +3,7 @@
 Contract events → Postgres → read-only list API (`/locks`, `/locks/:id`, `/payees`, `/health`).
 **Lists and dashboards only:** money-moving pages read the chain, never this API.
 
-Settings: see `../../.env.example`. Typed API contract: `src/api/schemas.ts`.
+Settings: see `../../.env.example`. Typed API contract: `src/api/schemas.ts`. Public HTTP API reference: [`docs/API.md`](docs/API.md).
 
 ## Run locally
 

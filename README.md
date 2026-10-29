@@ -78,7 +78,7 @@ pnpm --filter indexer dev            # poller + list API
 
 It polls `getEvents` from a persisted cursor, is idempotent on `(tx_hash, event_index)`, and treats missing RPC history as a **gap**: it stops with a `GapError` rather than skipping silently. `chain_events` is append-only.
 
-Routes: `GET /health` (returns 503 when lagging), `/locks`, `/locks/:id`, `/payees`, `/events/:txHash/:eventIndex`.
+Routes: `GET /health` (returns 503 when lagging), `/locks`, `/locks/:id`, `/payees`, `/events/:txHash/:eventIndex`. Full HTTP reference: [`services/indexer/docs/API.md`](services/indexer/docs/API.md).
 
 **These reads are for lists and dashboards only.** Pages that move money — claim, release, refund, decline — read the chain directly. The indexer may lag without affecting correctness.
 
