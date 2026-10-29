@@ -1,6 +1,7 @@
 # kinlock-sdk
 
 [![CI](https://github.com/Kinlock-Org/kinlock-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/Kinlock-Org/kinlock-sdk/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Kinlock-Org/kinlock-sdk/badge)](https://scorecard.dev/viewer/?uri=github.com/Kinlock-Org/kinlock-sdk)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/Kinlock-Org/kinlock-sdk)](https://github.com/Kinlock-Org/kinlock-sdk/releases)
 
@@ -9,6 +10,34 @@ The TypeScript client for the `kinlock` contract (`packages/sdk`) and the event 
 > **Status: SDK v0.3.0 released; indexer built and running on testnet.** Both halves work. What's left is multi-`schema_version` handler coverage (`M2-10`), the tier-3/archive verification path (`M2-16`, blocked on the archive decision `M0-09`), and lag alerting (`M2-15`). See `ROADMAP.md`.
 
 **Try it live (testnet):** [kinlock-app.vercel.app](https://kinlock-app.vercel.app) · **Docs:** [kinlock-org.github.io](https://kinlock-org.github.io) · **Indexer:** [indexer-production-705a.up.railway.app](https://indexer-production-705a.up.railway.app) (`GET /health`)
+
+## First 15 minutes
+
+To get up and running from a fresh checkout:
+
+1. **Prerequisites:** Node 20+, pnpm 10 (`corepack enable pnpm`).
+2. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
+3. **Run tests:**
+   ```bash
+   pnpm test
+   ```
+   Vitest runs all 15 test files (9 in `@kinlock/sdk`, 6 in `@kinlock/indexer`) using in-process PGlite; no external database or local Postgres installation is required.  
+   *Note: SDK and indexer tests run from the workspace root (packages do not define individual `test` scripts).*
+4. **Build and check:**
+   ```bash
+   pnpm build
+   pnpm typecheck
+   pnpm lint
+   ```
+5. **Run the indexer locally (optional):**
+   ```bash
+   docker compose up -d                 # local Postgres 17
+   pnpm --filter indexer db:migrate     # apply Drizzle migrations
+   pnpm --filter indexer dev            # watch poller + list API
+   ```
 
 ## Layout
 
@@ -59,7 +88,7 @@ Routes: `GET /health` (returns 503 when lagging), `/locks`, `/locks/:id`, `/paye
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-Vitest runs both projects (8 SDK test files, 5 indexer files against in-process Postgres via PGlite). Node 20, TypeScript 7, Biome for lint and format. `publish.yml` attaches a `.tgz` to a GitHub Release on any `sdk-v*` tag — packages ship as release artifacts, not through npm (ADR-0026).
+Vitest runs both projects (15 test files: 9 SDK test files, 6 indexer test files against in-process Postgres via PGlite; 165 tests total as of 2026-10). Node 20, TypeScript 7, Biome for lint and format. `publish.yml` attaches a `.tgz` to a GitHub Release on any `sdk-v*` tag — packages ship as release artifacts, not through npm (ADR-0026).
 
 ## Read first
 
