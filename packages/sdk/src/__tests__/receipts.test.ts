@@ -37,13 +37,15 @@ const released = (overrides: Record<string, xdr.ScVal> = {}) =>
     ...overrides,
   });
 
-/** One RPC event as stellar-sdk returns it. */
-const rpcEvent = (name: string, value: xdr.ScVal, index = 1, ok = true) => ({
+/** One RPC event as stellar-sdk returns it. `ok: undefined` omits the field entirely, as the
+ * real soroban-testnet.stellar.org RPC does for genuinely successful calls (confirmed against a
+ * live transaction while debugging M3-19 in kinlock-app). */
+const rpcEvent = (name: string, value: xdr.ScVal, index = 1, ok: boolean | undefined = true) => ({
   id: `0021711794120744960-000000000${index}`,
   txHash: TX,
   ledger: 100,
   ledgerClosedAt: "2026-10-07T08:29:17Z",
-  inSuccessfulContractCall: ok,
+  ...(ok === undefined ? {} : { inSuccessfulContractCall: ok }),
   topic: [xdr.ScVal.scvSymbol(name), nativeToScVal(3n, { type: "u64" })],
   value,
 });
@@ -155,6 +157,13 @@ describe("verifyReceipt, tier 1 (live RPC)", () => {
     expect((await verifyReceipt(config, { txHash: TX, eventIndex: 1 })).valid).toBe(false);
     tx = { status: "FAILED" };
     expect((await verifyReceipt(config, { txHash: TX, eventIndex: 1 })).reason).toBe("not_found");
+  });
+
+  it("verifies an event even when the RPC omits inSuccessfulContractCall", async () => {
+    // Real soroban-testnet.stellar.org responses omit this field on successful events rather
+    // than setting it `true`; `getTransaction`'s SUCCESS status is what actually gates this.
+    events = [rpcEvent("released", released(), 1, undefined)];
+    expect((await verifyReceipt(config, { txHash: TX, eventIndex: 1 })).valid).toBe(true);
   });
 });
 
