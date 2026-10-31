@@ -1,3 +1,8 @@
 packages:
   - "packages/*"
   - "services/*"
+
+# follow-redirects is not a dependency of either workspace package; it reaches the tree
+# only as @stellar/stellar-sdk -> axios -> follow-redirects, so no direct bump can pin it.
+overrides:
+  "follow-redirects@<1.16.2": ">=1.16.2"
