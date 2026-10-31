@@ -53,7 +53,7 @@ async function bootstrapPayeesFromChain(): Promise<void> {
   try {
     const r = await bootstrapPayees(db, config.REGISTRY_DIR, payeeReader);
     if (r.seeded.length) log.info(r, "payee rows seeded from chain");
-    if (r.skipped.length) log.warn(r.skipped, "payees not seeded");
+    if (r.skipped.length) log.warn({ skipped: r.skipped }, "payees not seeded");
   } catch (err) {
     log.error({ err }, "payee bootstrap failed");
   }
