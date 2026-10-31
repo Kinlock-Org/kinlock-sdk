@@ -14,6 +14,19 @@ set -a; . ../../.env; set +a          # your copy of .env.example
 pnpm build && pnpm start              # applies migrations, then runs the poller and API
 ```
 
+## Where payee rows come from
+
+A `payees` row is normally written by a `PayeeRegistered` event. Testnet RPC keeps about eight days
+of event history, so a database that starts inside that window cannot replay the registration events
+of payees registered earlier, and `/payees` would list nobody. At startup the indexer therefore reads
+`get_payee` from the contract for every payee in `REGISTRY_DIR` that has **no row yet** and inserts it
+with the values the contract reports (roadmap `M2-28`). It never updates a row the events already
+wrote, never invents a payee (one the contract doesn't have is reported as skipped), and never
+backfills locks — locks still come only from events, and a history gap still stops ingestion and
+alerts. The registry join (M2-13) then binds names, city, country and attester handle to a seeded row
+by `meta_hash`, exactly as it does for an event-derived one, so a seeded row is no less honest than a
+replayed one.
+
 ## Deploy to testnet (Railway)
 
 Testnet only. One service built from `services/indexer/Dockerfile` (selected by `railway.json`

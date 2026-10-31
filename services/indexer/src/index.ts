@@ -5,9 +5,11 @@ import { buildServer } from "./api/server.js";
 import { loadConfig } from "./config.js";
 import { createDb } from "./db/client.js";
 import { runPoller } from "./ingest/poller.js";
+import { bootstrapPayees } from "./registry/bootstrap.js";
 import { syncRegistry } from "./registry/sync.js";
 import { createRpcClient } from "./rpc/client.js";
 import { createLockReader } from "./rpc/locks.js";
+import { createPayeeReader } from "./rpc/payees.js";
 
 const config = loadConfig();
 const log = pino({ name: "kinlock-indexer" });
@@ -15,6 +17,11 @@ const { db, close } = createDb(config.DATABASE_URL);
 const controller = new AbortController();
 
 const rpc = createRpcClient(config.STELLAR_RPC_URLS);
+const payeeReader = createPayeeReader(
+  config.STELLAR_RPC_URLS,
+  config.STELLAR_NETWORK_PASSPHRASE,
+  config.KINLOCK_CONTRACT_ID,
+);
 
 // The chain tip for /health, fetched at most every 5 s however often /health is called.
 let tip: { ledger: number; at: number } | undefined;
@@ -37,6 +44,22 @@ async function joinRegistry(): Promise<void> {
   }
 }
 if (!config.REGISTRY_DIR) log.warn("REGISTRY_DIR unset: payees will have no display data");
+
+// Payees older than RPC history have no replayable event (M2-28): seed the missing rows from the
+// contract before joining, so the first sync can bind display data to them. Logged, never fatal,
+// like the join itself.
+async function bootstrapPayeesFromChain(): Promise<void> {
+  if (!config.REGISTRY_DIR) return;
+  try {
+    const r = await bootstrapPayees(db, config.REGISTRY_DIR, payeeReader);
+    if (r.seeded.length) log.info(r, "payee rows seeded from chain");
+    if (r.skipped.length) log.warn(r.skipped, "payees not seeded");
+  } catch (err) {
+    log.error({ err }, "payee bootstrap failed");
+  }
+}
+await bootstrapPayeesFromChain();
+
 await joinRegistry();
 const registryTimer = setInterval(joinRegistry, config.REGISTRY_SYNC_MS);
 

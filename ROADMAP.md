@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-10-29 (`docs/sync-canonical-contract-surface`: doc copies regenerated from canonical so `docs-in-sync` matches `.github`#34) |
+| **Last updated** | 2026-10-31 (`feat/indexer-payee-bootstrap`: added row `M2-28`, indexer seeds payee rows from chain when the event is outside RPC retention) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 27 | 20 | 5 | 2 | 0 | 0 | 0 | 74% |
+| 3 SDK + indexer | 28 | 20 | 6 | 2 | 0 | 0 | 0 | 71% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **217** | **81** | **23** | **88** | **0** | **25** | **0** | **42%** |
+| **All** | **218** | **81** | **24** | **88** | **0** | **25** | **0** | **42%** |
 
 ---
 
@@ -293,6 +293,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-26 | `roadmap-check.yml` exempts Dependabot (`if: github.actor != 'dependabot[bot]'`): Dependabot has no way to know AGENTS.md §12's ROADMAP.md convention and can't be configured to edit it, so every Dependabot PR opened after `M2-25` was failing this required check for a reason unrelated to the dependency bump itself | sdk | P1 | DONE | M2-25 | `roadmap-check` reports success (skipped) on a real Dependabot PR; confirmed via GitHub's own status-checks docs that a job skipped by a job-level `if` reports "Success" and does not block a required check, not assumed |
 | M2-27 | Scorecard remediation, Tier 2: pin `malware-scan.yml`'s `pip install semgrep` to an exact version; switch CodeQL from GitHub's default setup (`weekly` schedule only — not configurable via the Code Scanning API, confirmed against GitHub's own REST docs) to an advanced `codeql.yml` workflow running on every push and PR, matching `kinlock-contracts`'s pattern (`SAST` was failing "run on every commit"); group `github/codeql-action*` in `dependabot.yml` so `init`/`analyze` can't drift apart the way they did in `kinlock-contracts` PR #47 | sdk | P2 | IN PROGRESS | M2-25 | Next scheduled Scorecard run shows `SAST` crediting commit coverage and `Pinned-Dependencies` unaffected by the semgrep install; not yet verified against a real re-run (pending merge; this repo's own Scorecard workflow, `M2-23`/PR #45, is itself still unmerged, so there is no live score to compare against yet) |
 | M2-25 | Scorecard remediation, Tier 1 (ahead of this repo's own Scorecard baseline, since `M2-23`/PR #45 hasn't merged yet): pin every `uses:` in every workflow file to a commit SHA; add `.github/dependabot.yml` for `npm` + `github-actions`; enable CodeQL default setup for `actions`+`javascript-typescript` via the Code Scanning API | sdk | P2 | DONE | — | Next Scorecard run (once `M2-23` merges) shows `Pinned-Dependencies`, `Dependency-Update-Tool`, and `SAST` all non-zero; verified against a real run, not assumed — merged; Dependabot and CodeQL both confirmed working for real |
+| M2-28 | Indexer seeds payee rows from current chain state (`get_payee`) when the `PayeeRegistered` event is outside RPC retention, so a database that starts mid-history still lists verified payees instead of nobody. Found while standing up the free testnet deployment (`M2-18`): the deployed contract's payees were registered 2026-10-06, and measured testnet `getEvents` history starts at ledger 5,351,993 of a 5,472,952 tip (~8 days) | sdk | P1 | IN PROGRESS | M2-13, M2-18 | `/payees` returns registry payees registered before the oldest retained ledger, names joined by `meta_hash`; existing (event-derived) rows are never overwritten; a payee the contract doesn't have is reported, never invented; locks are never backfilled this way; seeding is idempotent; unit-tested against the real migrations |
 
 ---
 
@@ -541,6 +542,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-31 | `feat/indexer-payee-bootstrap` | kinlock-sdk | M2-28 IN PROGRESS | While standing up the free testnet indexer (`M2-18`, Render free + Neon free) against contract `CCSHDQFRY…`, `/payees` came back with no named payees: the three registry payees were registered on 2026-10-06 (chain ledger time 1791285287), while `getEvents` on the public testnet RPC starts at **ledger 5,351,993** of a tip of **5,472,952** (measured today, ~8 days). Those `PayeeRegistered` events are unrecoverable from RPC, and per the gap rule the indexer correctly refuses to invent them — which left a legitimately deployed contract showing no verified payees. Added a startup seed: for every payee the registry tree names that has **no row yet**, read `get_payee` from the contract and insert what the contract reports (`src/rpc/payees.ts`, `src/registry/bootstrap.ts`, wired in `src/index.ts`). Existing rows are untouched, so the event pipeline keeps ownership of anything it has seen; a payee the contract doesn't have is returned as `skipped` with a reason, never inserted; nothing backfills locks; the registry join then binds display fields by `meta_hash` as before. `PayeeNotFound` is recognised from the simulation failure's first line only (`contractErrorCode`), because the diagnostic log below it repeats the same code even when the failure is something else. Verified by running: `npx biome check .` (0 errors), `tsc --noEmit` (clean), `pnpm -r build` (both packages), `npx vitest run` (**191 tests, 17 files, all pass**; 11 new). Test teeth proven by injecting each bug and re-running: dropping the "row already exists" guard fails 2 tests, inventing a row for an unregistered payee fails 1, and matching the contract code anywhere in the response fails 1 — each reverted after. The `get_payee` shapes the reader validates (enum variants as one-element vecs, `meta_hash` as `Uint8Array`, `registered_at`/`status_changed_at` as `u64`, `HostError: Error(Contract, #11)` for an unregistered id) were taken from live testnet simulations, not assumed. No contract, schema, migration or workflow file changed. **Open question for review:** whether this deserves an org ADR (next free number, `0031` is in flight elsewhere) or whether the `services/indexer/README.md` + `docs/API.md` §3.4 provenance notes are enough; and the README's Railway deploy section is now stale (the live host is Render) — left for the deployment PR rather than mixed into this one. |
 | 2026-10-29 | `#62` | kinlock-sdk | no row changes | chore(deps-dev): bump @electric-sql/pglite from 0.5.8 to 0.5.11 Dependabot PR landed by a maintainer. `roadmap-check.yml:14` only exempts runs whose actor is dependabot[bot], and a maintainer has already pushed to this branch, so the job runs here and needs a real ROADMAP.md diff: this row is that diff. No source, config or lockfile change is introduced by this commit and no row status moves. |
 | 2026-10-29 | `#54` | kinlock-sdk | no row changes | chore(deps): bump zod from 4.6.6 to 4.6.7 Dependabot PR landed by a maintainer. `roadmap-check.yml:14` only exempts runs whose actor is dependabot[bot], and a maintainer has already pushed to this branch, so the job runs here and needs a real ROADMAP.md diff: this row is that diff. No source, config or lockfile change is introduced by this commit and no row status moves. |
 | 2026-10-29 | `#53` | kinlock-sdk | no row changes | chore(deps-dev): bump @types/node from 26.6.4 to 26.6.5 Dependabot PR merged by a maintainer, so this Changelog row is added by hand to satisfy `roadmap-check` (the workflow's `if: github.actor != 'dependabot[bot]'` exemption does not apply once a maintainer has pushed to the branch). No source or config file is touched by this commit, and no row status moves. |

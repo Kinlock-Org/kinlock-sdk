@@ -307,6 +307,7 @@ Lists verified institutional payees (Schools, Landlords/Rent) registered on-chai
 #### State Source
 **Indexer state + Hash-bound Git Registry** (`source: "indexer"`).  
 Registry metadata fields (`slug`, `displayName`, `country`, `localCurrency`, `city`, `attesterHandle`) are populated only when the registry file's SHA-256 canonical hash matches the on-chain `metaHash`. Otherwise, these fields are returned as `null`.
+A payee row is normally derived from `PayeeRegistered` / `PayeeStatusChanged` / `PayoutUpdated` events. Because RPC event history is limited, a row for a payee whose events are no longer retrievable is instead seeded at startup from the contract's current `get_payee` state (roadmap `M2-28`): the same fields, read from chain rather than replayed. Either way the row is a mirror of chain state that can lag, not an authority — the app re-reads the chain before any money move.
 
 #### Query Parameters (`PayeesQuery`)
 | Parameter | Type | Required | Constraints & Description |
