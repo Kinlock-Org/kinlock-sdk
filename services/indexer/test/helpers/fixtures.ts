@@ -10,6 +10,7 @@ import * as schema from "../../src/db/schema.js";
 import type { TrancheSchedule } from "../../src/handlers/types.js";
 import type { EventsPage, EventsQuery, RpcClient, RpcEvent } from "../../src/rpc/client.js";
 import type { LockReader } from "../../src/rpc/locks.js";
+import type { ChainPayee, PayeeReader } from "../../src/rpc/payees.js";
 
 interface Fixture {
   events: RpcEvent[];
@@ -84,6 +85,22 @@ export function fixtureLocks(): LockReader & { reads: bigint[] } {
       const t = fixture.tranches[lockId.toString()];
       if (!t) throw new Error(`no fixture tranches for lock ${lockId}`);
       return t.map((x) => ({ amount: BigInt(x.amount), unlockAt: BigInt(x.unlock_at) }));
+    },
+  };
+}
+
+/** An in-memory `get_payee`: the state per payee id, `undefined` = never registered. */
+export function fakePayees(
+  states: Record<string, ChainPayee | Error | undefined>,
+): PayeeReader & { reads: string[] } {
+  const reads: string[] = [];
+  return {
+    reads,
+    async read(payeeId) {
+      reads.push(payeeId);
+      const state = states[payeeId];
+      if (state instanceof Error) throw state;
+      return state;
     },
   };
 }
