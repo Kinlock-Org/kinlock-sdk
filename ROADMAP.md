@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-01 (test/preflight-strkey-fuzzing-70: closes #70) |
+| **Last updated** | 2026-11-01 (docs/drips-wave-application: DRIPS_WAVE.md) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -542,6 +542,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-01 | `docs/drips-wave-application` | sdk | no row changes | Added dedicated DRIPS_WAVE.md application and review summary document for the Drips Wave Stellar program review panel, detailing TypeScript SDK and event indexer architecture, live Railway testnet deployment, testing hygiene, issue queue, and maintainers. |
 | 2026-11-01 | `test/preflight-strkey-fuzzing-70` | sdk | no row changes | Closes #70: added comprehensive StrKey validation fuzz tests in packages/sdk/src/__tests__/preflight.test.ts covering truncated, length-overflow, invalid checksums, mixed-case, non-base32, secret-keys, multiplexed (M-address), and signed-payload addresses across sender, token, and direct recipient. All 180 tests pass. |
 | 2026-11-01 | `chore/bump-sdk-0.3.2` | sdk | no row changes | Bump @kinlock/sdk to 0.3.2 with dual-mode universal direct lock support (ADR-0031) and @kinlock/contract 0.2.0 dependency. |
 | 2026-11-01 | `feat/universal-direct-locks` | sdk | M2-28 DONE (new row) | Implemented Dual-Mode SDK support (ADR-0031): updated `Lock.payeeId` to `Hash32 \| null`, added `recipient?: Address` to `CreateLockParams`, routed `createLock` to `create_direct_lock` when `recipient` is passed, updated `preflight` to bypass payee validation for direct recipients while validating trustlines and balance. Added maintainer information and media links. All 175 tests pass. |
