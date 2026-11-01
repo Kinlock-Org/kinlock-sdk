@@ -44,7 +44,7 @@ export interface TrancheInput {
 export interface Lock {
   id: bigint;
   sender: Address;
-  payeeId: Hash32;
+  payeeId: Hash32 | null;
   /** Snapshot taken at creation; never changes. */
   payout: Address;
   token: Address;

@@ -5,6 +5,7 @@ const methods = {
   get_lock: vi.fn(),
   get_payee: vi.fn(),
   create_lock: vi.fn(),
+  create_direct_lock: vi.fn(),
   release: vi.fn(),
   refund: vi.fn(),
   decline: vi.fn(),
@@ -145,6 +146,32 @@ describe("createLock", () => {
     expect(constructed[0]).toMatchObject({ publicKey: SENDER });
     expect((t as { signAndSend: ReturnType<typeof vi.fn> }).signAndSend).toHaveBeenCalledWith({
       signTransaction: s.signTransaction,
+    });
+  });
+
+  it("simulates and signs create_direct_lock when recipient is passed", async () => {
+    const t = tx(new Ok(10n), { result: new Ok(10n), hash: "cd".repeat(32) });
+    methods.create_direct_lock.mockResolvedValue(t);
+    const directParams = {
+      sender: SENDER,
+      token: USDC,
+      recipient: PAYOUT,
+      tranches: [{ amount: 10000000n, unlockAt: 1n }],
+      refHash: H2,
+      expiresAt: 1791306618n,
+    };
+    const s = signer();
+    expect(await createLock(config, directParams, s)).toEqual({
+      lockId: 10n,
+      txHash: "cd".repeat(32),
+    });
+    expect(methods.create_direct_lock).toHaveBeenCalledWith({
+      sender: SENDER,
+      token: USDC,
+      recipient: PAYOUT,
+      tranches: [{ amount: 10000000n, unlock_at: 1n }],
+      ref_hash: Buffer.from(H2, "hex"),
+      expires_at: 1791306618n,
     });
   });
 

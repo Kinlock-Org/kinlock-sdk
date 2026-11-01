@@ -50,7 +50,8 @@ export interface PreflightResult {
 export interface PreflightParams {
   sender: Address;
   token: Address;
-  payeeId: Hash32;
+  payeeId?: Hash32;
+  recipient?: Address;
   total: bigint;
   refHash: Hash32;
 }
@@ -208,12 +209,16 @@ function checkParams(p: PreflightParams): void {
       throw bad(`${field} is not a valid Stellar address`);
     }
   }
-  for (const [field, value] of [
-    ["payeeId", p.payeeId],
-    ["refHash", p.refHash],
-  ] as const) {
-    if (!/^[0-9a-f]{64}$/.test(value)) throw bad(`${field} must be 32 bytes as lowercase hex`);
+  if (p.recipient) {
+    if (!StrKey.isValidEd25519PublicKey(p.recipient) && !StrKey.isValidContract(p.recipient)) {
+      throw bad("recipient is not a valid Stellar address");
+    }
+  } else if (p.payeeId) {
+    if (!/^[0-9a-f]{64}$/.test(p.payeeId)) throw bad("payeeId must be 32 bytes as lowercase hex");
+  } else {
+    throw bad("either payeeId or recipient must be provided");
   }
+  if (!/^[0-9a-f]{64}$/.test(p.refHash)) throw bad("refHash must be 32 bytes as lowercase hex");
   if (typeof p.total !== "bigint" || p.total <= 0n) throw bad("total must be a positive bigint");
 }
 
@@ -237,40 +242,49 @@ export async function preflight(
 ): Promise<PreflightResult[]> {
   checkParams(params);
   // The payee read feeds three checks (status, trustline, payout change).
-  let payout: Address | undefined;
-  const payeeActive = await settle("payee_active", async () => {
-    const tx = await new Client({
-      contractId: config.contractId,
-      networkPassphrase: config.networkPassphrase,
-      rpcUrl: config.rpcUrl,
-      allowHttp: config.allowHttp ?? false,
-    }).get_payee({ payee_id: Buffer.from(params.payeeId, "hex") });
-    if (tx.result.isErr()) {
-      const name = tx.result.unwrapErr().message.split(":")[0];
-      return result(
-        "payee_active",
-        name === "PayeeNotFound" ? "fail" : "unknown",
-        name === "PayeeNotFound" ? "not_found" : undefined,
-      );
-    }
-    const payee = tx.result.unwrap();
-    payout = payee.payout;
-    return result(
-      "payee_active",
-      payee.status.tag === "Active" ? "pass" : "fail",
-      payee.status.tag === "Active" ? "pass" : payee.status.tag.toLowerCase(),
-    );
-  });
+  let payout: Address | undefined = params.recipient;
+  const payeeActive = params.recipient
+    ? Promise.resolve(result("payee_active", "pass"))
+    : await settle("payee_active", async () => {
+        if (!params.payeeId) {
+          return result("payee_active", "fail", "not_found");
+        }
+        const payeeId = params.payeeId;
+        const tx = await new Client({
+          contractId: config.contractId,
+          networkPassphrase: config.networkPassphrase,
+          rpcUrl: config.rpcUrl,
+          allowHttp: config.allowHttp ?? false,
+        }).get_payee({ payee_id: Buffer.from(payeeId, "hex") });
+        if (tx.result.isErr()) {
+          const name = tx.result.unwrapErr().message.split(":")[0];
+          return result(
+            "payee_active",
+            name === "PayeeNotFound" ? "fail" : "unknown",
+            name === "PayeeNotFound" ? "not_found" : undefined,
+          );
+        }
+        const payee = tx.result.unwrap();
+        payout = payee.payout;
+        return result(
+          "payee_active",
+          payee.status.tag === "Active" ? "pass" : "fail",
+          payee.status.tag === "Active" ? "pass" : payee.status.tag.toLowerCase(),
+        );
+      });
   const withPayout = (check: PreflightCheck, run: (payout: Address) => Promise<PreflightResult>) =>
     settle(check, () =>
       payout ? run(payout) : Promise.resolve(result(check, "unknown", "no_payee")),
     );
 
-  const [balance, payoutChange, duplicate, trustline] = await Promise.all([
+  const [balance, activeResult, payoutChange, duplicate, trustline] = await Promise.all([
     settle("sender_balance", () => senderBalance(config, params)),
-    withPayout("recent_payout_change", (po) => recentPayoutChange(config, params, po, now)),
+    payeeActive,
+    params.recipient
+      ? Promise.resolve(result("recent_payout_change", "pass"))
+      : withPayout("recent_payout_change", (po) => recentPayoutChange(config, params, po, now)),
     settle("duplicate_ref_hash", () => duplicateRefHash(config, params)),
     withPayout("payout_trustline_authorized", (po) => payoutTrustline(config, params, po)),
   ]);
-  return [balance, payeeActive, payoutChange, duplicate, trustline];
+  return [balance, activeResult, payoutChange, duplicate, trustline];
 }
