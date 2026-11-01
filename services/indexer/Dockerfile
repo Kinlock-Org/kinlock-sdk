@@ -3,7 +3,7 @@
 # Testnet only until mainnet is approved. Configuration comes from the environment (.env.example);
 # no secrets are baked into the image.
 
-FROM node:20-alpine AS build
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS build
 RUN corepack enable
 WORKDIR /repo
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
@@ -17,7 +17,7 @@ RUN pnpm --filter @kinlock/indexer build \
  && cp -r services/indexer/dist /out/dist \
  && mkdir -p /out/src/db && cp -r services/indexer/src/db/migrations /out/src/db/migrations
 
-FROM node:20-alpine
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
 # git: clones the public registry for the payee display join (REGISTRY_GIT_URL).
 RUN apk add --no-cache git
 WORKDIR /app

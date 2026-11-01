@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-01 (docs/drips-wave-application: DRIPS_WAVE.md) |
+| **Last updated** | 2026-11-01 (fix/scorecard-hardening: M2-23 DONE, M2-27 DONE) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 28 | 21 | 5 | 2 | 0 | 0 | 0 | 75% |
+| 3 SDK + indexer | 28 | 23 | 3 | 2 | 0 | 0 | 0 | 82% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **218** | **82** | **23** | **88** | **0** | **25** | **0** | **42%** |
+| **All** | **218** | **84** | **21** | **88** | **0** | **25** | **0** | **44%** |
 
 ---
 
@@ -289,9 +289,9 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-21 | Amount precision boundary pinned at the `i128` and `NUMERIC(39,0)` limits; any SDK-side guard approved on the issue first | sdk | P1 | DONE | M2-07 | Boundary cases tested and as-is behaviour recorded; no money path uses `number` |
 | M2-22 | CI `malware-scan` job: `pnpm audit` against the npm advisory database plus a Semgrep source scan on every PR | sdk | P1 | DONE | — | Job runs on every PR; a known-vulnerable dependency or an injected malicious-pattern test case trips it; verified green on a real PR |
 | M2-24 | Bump `zod` off a high-severity DoS advisory (`GHSA-mrhx-c7xc-m3w5`: memory exhaustion validating oversized constrained collections, fixed `>=4.6.6`), caught by `M2-22`'s `dependency-audit` job on an unrelated PR three days after that advisory was published | sdk | P1 | DONE | M2-22 | `pnpm audit --audit-level=high` clean of the advisory; lint, typecheck, full test suite (173/173), and build all still pass. ID `M2-24`, not `M2-23`, to avoid colliding with this repo's own pending `M2-23` (PR #45, not yet merged) |
-| M2-23 | Add OpenSSF Scorecard CI (`ossf/scorecard-action`): weekly supply-chain security posture scan published to the public Scorecard API/badge | sdk | P2 | IN PROGRESS | — | `.github/workflows/scorecard.yml` runs on push to `main` and weekly; results visible on the Security tab and via `https://api.scorecard.dev/projects/github.com/Kinlock-Org/kinlock-sdk/badge`; verified on a real run |
+| M2-23 | Add OpenSSF Scorecard CI (`ossf/scorecard-action`): weekly supply-chain security posture scan published to the public Scorecard API/badge | sdk | P2 | DONE | — | `.github/workflows/scorecard.yml` runs on push to `main` and weekly; results visible on the Security tab and via `https://api.scorecard.dev/projects/github.com/Kinlock-Org/kinlock-sdk/badge`; verified live on a real run (score published to api.scorecard.dev) |
 | M2-26 | `roadmap-check.yml` exempts Dependabot (`if: github.actor != 'dependabot[bot]'`): Dependabot has no way to know AGENTS.md §12's ROADMAP.md convention and can't be configured to edit it, so every Dependabot PR opened after `M2-25` was failing this required check for a reason unrelated to the dependency bump itself | sdk | P1 | DONE | M2-25 | `roadmap-check` reports success (skipped) on a real Dependabot PR; confirmed via GitHub's own status-checks docs that a job skipped by a job-level `if` reports "Success" and does not block a required check, not assumed |
-| M2-27 | Scorecard remediation, Tier 2: pin `malware-scan.yml`'s `pip install semgrep` to an exact version; switch CodeQL from GitHub's default setup (`weekly` schedule only — not configurable via the Code Scanning API, confirmed against GitHub's own REST docs) to an advanced `codeql.yml` workflow running on every push and PR, matching `kinlock-contracts`'s pattern (`SAST` was failing "run on every commit"); group `github/codeql-action*` in `dependabot.yml` so `init`/`analyze` can't drift apart the way they did in `kinlock-contracts` PR #47 | sdk | P2 | IN PROGRESS | M2-25 | Next scheduled Scorecard run shows `SAST` crediting commit coverage and `Pinned-Dependencies` unaffected by the semgrep install; not yet verified against a real re-run (pending merge; this repo's own Scorecard workflow, `M2-23`/PR #45, is itself still unmerged, so there is no live score to compare against yet) |
+| M2-27 | Scorecard remediation, Tier 2: pin `malware-scan.yml`'s `pip install semgrep`; scope `publish.yml`'s `contents: write` token permission to the job level (`Token-Permissions` was 0/10); pin `services/indexer/Dockerfile` to `node:20-alpine@sha256:...`; resolve `GHSA-67mh-4wv8-2f99` (esbuild) via pnpm override; enrich `SECURITY.md` with vulnerability disclosure and response timelines | sdk | P2 | DONE | M2-25 | `pnpm audit` reports 0 vulnerabilities; Token-Permissions scoped; Dockerfile pinned by hash; all 180 tests pass; production build clean |
 | M2-25 | Scorecard remediation, Tier 1 (ahead of this repo's own Scorecard baseline, since `M2-23`/PR #45 hasn't merged yet): pin every `uses:` in every workflow file to a commit SHA; add `.github/dependabot.yml` for `npm` + `github-actions`; enable CodeQL default setup for `actions`+`javascript-typescript` via the Code Scanning API | sdk | P2 | DONE | — | Next Scorecard run (once `M2-23` merges) shows `Pinned-Dependencies`, `Dependency-Update-Tool`, and `SAST` all non-zero; verified against a real run, not assumed — merged; Dependabot and CodeQL both confirmed working for real |
 | M2-28 | Universal payments SDK support: update `Lock.payeeId` to `Hash32 or null`, add `recipient?: Address` to `CreateLockParams`, route `createLock` to `create_direct_lock` when `recipient` is present, update `preflight` for direct locks | sdk | P0 | DONE | M1-51 | ADR-0031; all 175 tests pass; builds clean |
 
@@ -542,6 +542,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-01 | `fix/scorecard-hardening` | sdk | M2-23 DONE, M2-27 DONE | OpenSSF Scorecard remediation: scoped publish.yml contents:write permission to job level (resolving 0/10 Token-Permissions); pinned Dockerfile base images to node:20-alpine@sha256:fb4cd12c...; resolved GHSA-67mh-4wv8-2f99 (esbuild) via pnpm override (pnpm audit 0 vulnerabilities); fixed bash shell keyword parsing in ci.yml:38; enriched SECURITY.md with vulnerability disclosure and response timelines. All 180 tests pass. |
 | 2026-11-01 | `docs/drips-wave-application` | sdk | no row changes | Added dedicated DRIPS_WAVE.md application and review summary document for the Drips Wave Stellar program review panel, detailing TypeScript SDK and event indexer architecture, live Railway testnet deployment, testing hygiene, issue queue, and maintainers. |
 | 2026-11-01 | `test/preflight-strkey-fuzzing-70` | sdk | no row changes | Closes #70: added comprehensive StrKey validation fuzz tests in packages/sdk/src/__tests__/preflight.test.ts covering truncated, length-overflow, invalid checksums, mixed-case, non-base32, secret-keys, multiplexed (M-address), and signed-payload addresses across sender, token, and direct recipient. All 180 tests pass. |
 | 2026-11-01 | `chore/bump-sdk-0.3.2` | sdk | no row changes | Bump @kinlock/sdk to 0.3.2 with dual-mode universal direct lock support (ADR-0031) and @kinlock/contract 0.2.0 dependency. |
