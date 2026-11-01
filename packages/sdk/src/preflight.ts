@@ -209,11 +209,11 @@ function checkParams(p: PreflightParams): void {
       throw bad(`${field} is not a valid Stellar address`);
     }
   }
-  if (p.recipient) {
+  if (p.recipient !== undefined) {
     if (!StrKey.isValidEd25519PublicKey(p.recipient) && !StrKey.isValidContract(p.recipient)) {
       throw bad("recipient is not a valid Stellar address");
     }
-  } else if (p.payeeId) {
+  } else if (p.payeeId !== undefined) {
     if (!/^[0-9a-f]{64}$/.test(p.payeeId)) throw bad("payeeId must be 32 bytes as lowercase hex");
   } else {
     throw bad("either payeeId or recipient must be provided");

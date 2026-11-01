@@ -226,4 +226,56 @@ describe("preflight", () => {
       });
     }
   });
+
+  it("fuzzes and rejects malformed Stellar StrKeys for sender, token, and recipient", async () => {
+    const malformedAddresses = [
+      // Truncated (short length)
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH",
+      "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAM",
+      // Too long
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH3A",
+      // Invalid checksum (corrupted last character)
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH4",
+      "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMB",
+      // Lowercase / mixed-case
+      "gbbui4n57s3tbuztukqpkwy5dert2zhqn4llqz747w7cd5hu3fghwdh3",
+      "cbieltk6ybzju5up2wwqeucyklpu6aunz2bq4wwfeie3uscihmxqdama",
+      // Invalid base32 chars ('8', '9', '0', '1' in non-standard positions)
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH8",
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH9",
+      // Unsupported key types: Secret seed (S-key)
+      "SBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      // Multiplexed account (M-address, starts with M)
+      "MAAAAAAAAAAAAAB7BQ2L7E5NBWMXDUCMZS5KGBGQBDT7UV5JOWUTDDQQFDNXAOQAAAAAAAAAAAC2K",
+      // Signed payload account (starts with P)
+      "PAAAAAAAAAAAAAB7BQ2L7E5NBWMXDUCMZS5KGBGQBDT7UV5JOWUTDDQQFDNXAOQAAAAAAAAAAAC2K",
+      // Random strings and empty
+      "",
+      "not-a-stellar-key",
+      "0x1234567890abcdef1234567890abcdef12345678",
+    ];
+
+    for (const badAddr of malformedAddresses) {
+      // Test bad sender
+      await expect(preflight(config, { ...params, sender: badAddr }, NOW)).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("sender is not a valid Stellar address"),
+      });
+
+      // Test bad token
+      await expect(preflight(config, { ...params, token: badAddr }, NOW)).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("token is not a valid Stellar address"),
+      });
+
+      // Test bad direct recipient
+      const { payeeId: _, ...directParams } = params;
+      await expect(
+        preflight(config, { ...directParams, recipient: badAddr }, NOW),
+      ).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("recipient is not a valid Stellar address"),
+      });
+    }
+  });
 });
