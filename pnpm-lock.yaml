@@ -24,8 +24,8 @@ importers:
   packages/sdk:
     dependencies:
       '@kinlock/contract':
-        specifier: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz
-        version: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz
+        specifier: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.2.0/kinlock-contract-0.2.0.tgz
+        version: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.2.0/kinlock-contract-0.2.0.tgz
       '@stellar/stellar-sdk':
         specifier: 17.2.1
         version: 17.2.1
@@ -626,9 +626,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@kinlock/contract@https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz':
-    resolution: {tarball: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz}
-    version: 0.1.0
+  '@kinlock/contract@https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.2.0/kinlock-contract-0.2.0.tgz':
+    resolution: {tarball: https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.2.0/kinlock-contract-0.2.0.tgz}
+    version: 0.2.0
 
   '@noble/ed25519@3.2.0':
     resolution: {integrity: sha512-criDgRlnUA09hchYrTy/JUWPIEap5rZxQe6wDWzRx51oWWpDRcUpuNzlgPxDJaOK6AsW9c0wKcj3rKRv6t+bPQ==}
@@ -1948,7 +1948,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@kinlock/contract@https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.1.0/kinlock-contract-0.1.0.tgz':
+  '@kinlock/contract@https://github.com/Kinlock-Org/kinlock-contracts/releases/download/bindings-v0.2.0/kinlock-contract-0.2.0.tgz':
     dependencies:
       '@stellar/stellar-sdk': 17.2.1
       buffer: 6.0.3
