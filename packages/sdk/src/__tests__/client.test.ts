@@ -96,6 +96,15 @@ describe("getLock", () => {
     expect(constructed[0]).not.toHaveProperty("publicKey");
   });
 
+  it("retries on transient RPC 429 rate limit and recovers", async () => {
+    methods.get_lock
+      .mockRejectedValueOnce({ status: 429, message: "Rate limit exceeded" })
+      .mockResolvedValueOnce(tx(new Ok(rawLock)));
+    const lock = await getLock(config, 7n);
+    expect(lock?.id).toBe(7n);
+    expect(methods.get_lock).toHaveBeenCalledTimes(2);
+  });
+
   it("returns null for an unknown lock", async () => {
     methods.get_lock.mockResolvedValue(
       tx(new Err({ message: "LockNotFound: no lock exists with this ID." })),

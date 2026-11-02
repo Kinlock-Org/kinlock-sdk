@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-01 (fix/scorecard-hardening: M2-23 DONE, M2-27 DONE) |
+| **Last updated** | 2026-11-02 (feat/sdk-rpc-retry-backoff-68: closes #68) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -542,6 +542,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-02 | `feat/sdk-rpc-retry-backoff-68` | sdk | no row changes (M2-04) | Closes #68. Add zero-dependency exponential backoff with full jitter in `packages/sdk/src/retry.ts`, retrying transient HTTP 429 rate limits, 503 service unavailable, and network errors across Soroban RPC contract client calls with immediate failure on 400 Bad Request and contract logic errors. Covered by 15 dedicated unit tests. |
 | 2026-11-01 | `fix/scorecard-hardening` | sdk | M2-23 DONE, M2-27 DONE | OpenSSF Scorecard remediation: scoped publish.yml contents:write permission to job level (resolving 0/10 Token-Permissions); pinned Dockerfile base images to node:20-alpine@sha256:fb4cd12c...; resolved GHSA-67mh-4wv8-2f99 (esbuild) via pnpm override (pnpm audit 0 vulnerabilities); fixed bash shell keyword parsing in ci.yml:38; enriched SECURITY.md with vulnerability disclosure and response timelines. All 180 tests pass. |
 | 2026-11-01 | `docs/drips-wave-application` | sdk | no row changes | Added dedicated DRIPS_WAVE.md application and review summary document for the Drips Wave Stellar program review panel, detailing TypeScript SDK and event indexer architecture, live Railway testnet deployment, testing hygiene, issue queue, and maintainers. |
 | 2026-11-01 | `test/preflight-strkey-fuzzing-70` | sdk | no row changes | Closes #70: added comprehensive StrKey validation fuzz tests in packages/sdk/src/__tests__/preflight.test.ts covering truncated, length-overflow, invalid checksums, mixed-case, non-base32, secret-keys, multiplexed (M-address), and signed-payload addresses across sender, token, and direct recipient. All 180 tests pass. |

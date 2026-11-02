@@ -13,6 +13,7 @@ import { StrKey } from "@stellar/stellar-sdk";
 import type { AssembledTransaction, Result, SignTransaction } from "@stellar/stellar-sdk/contract";
 import { Buffer } from "buffer";
 import { KinlockError } from "./errors.js";
+import { withRetry } from "./retry.js";
 import type {
   Address,
   Category,
@@ -104,8 +105,9 @@ async function signAndSend<T>(
   if (tx.result.isErr()) throw contractError(tx.result.unwrapErr().message);
   let sent: Awaited<ReturnType<typeof tx.signAndSend>>;
   try {
-    sent = await tx.signAndSend({ signTransaction: signer.signTransaction });
+    sent = await withRetry(() => tx.signAndSend({ signTransaction: signer.signTransaction }));
   } catch (e) {
+    if (e instanceof KinlockError) throw e;
     throw new KinlockError(`transaction failed: ${(e as Error).message}`, "TX_FAILED");
   }
   const result = sent.result;
@@ -166,28 +168,34 @@ export async function createLock(
   }
   const client = contractClient(config, signer.address);
   if (params.recipient) {
-    const tx = await client.create_direct_lock({
-      sender: params.sender,
-      token: params.token,
-      recipient: params.recipient,
-      tranches: params.tranches.map((t) => ({ amount: t.amount, unlock_at: t.unlockAt })),
-      ref_hash: bytes32(params.refHash),
-      expires_at: params.expiresAt,
-    });
+    const recipient = params.recipient;
+    const tx = await withRetry(() =>
+      client.create_direct_lock({
+        sender: params.sender,
+        token: params.token,
+        recipient,
+        tranches: params.tranches.map((t) => ({ amount: t.amount, unlock_at: t.unlockAt })),
+        ref_hash: bytes32(params.refHash),
+        expires_at: params.expiresAt,
+      }),
+    );
     const { value, txHash } = await signAndSend(tx, signer);
     return { lockId: value, txHash };
   }
   if (!params.payeeId) {
     throw new KinlockError("createLock requires either recipient or payeeId", "INVALID_INPUT");
   }
-  const tx = await client.create_lock({
-    sender: params.sender,
-    token: params.token,
-    payee_id: bytes32(params.payeeId),
-    tranches: params.tranches.map((t) => ({ amount: t.amount, unlock_at: t.unlockAt })),
-    ref_hash: bytes32(params.refHash),
-    expires_at: params.expiresAt,
-  });
+  const payeeId = params.payeeId;
+  const tx = await withRetry(() =>
+    client.create_lock({
+      sender: params.sender,
+      token: params.token,
+      payee_id: bytes32(payeeId),
+      tranches: params.tranches.map((t) => ({ amount: t.amount, unlock_at: t.unlockAt })),
+      ref_hash: bytes32(params.refHash),
+      expires_at: params.expiresAt,
+    }),
+  );
   const { value, txHash } = await signAndSend(tx, signer);
   return { lockId: value, txHash };
 }
@@ -202,10 +210,12 @@ export async function release(
   if (!Number.isInteger(params.trancheIndex) || params.trancheIndex < 0) {
     throw invalid("trancheIndex must be a non-negative integer");
   }
-  const tx = await contractClient(config, signer.address).release({
-    lock_id: params.lockId,
-    idx: params.trancheIndex,
-  });
+  const tx = await withRetry(() =>
+    contractClient(config, signer.address).release({
+      lock_id: params.lockId,
+      idx: params.trancheIndex,
+    }),
+  );
   return { txHash: (await signAndSend(tx, signer)).txHash };
 }
 
@@ -216,7 +226,9 @@ export async function refund(
   signer: Signer,
 ): Promise<{ txHash: string }> {
   checkU64(params.lockId, "lockId");
-  const tx = await contractClient(config, signer.address).refund({ lock_id: params.lockId });
+  const tx = await withRetry(() =>
+    contractClient(config, signer.address).refund({ lock_id: params.lockId }),
+  );
   return { txHash: (await signAndSend(tx, signer)).txHash };
 }
 
@@ -227,14 +239,16 @@ export async function decline(
   signer: Signer,
 ): Promise<{ txHash: string }> {
   checkU64(params.lockId, "lockId");
-  const tx = await contractClient(config, signer.address).decline({ lock_id: params.lockId });
+  const tx = await withRetry(() =>
+    contractClient(config, signer.address).decline({ lock_id: params.lockId }),
+  );
   return { txHash: (await signAndSend(tx, signer)).txHash };
 }
 
 /** Chain read (simulation; nothing is signed or sent). Never backed by the indexer. */
 export async function getLock(config: KinlockConfig, lockId: bigint): Promise<Lock | null> {
   checkU64(lockId, "lockId");
-  const tx = await contractClient(config).get_lock({ lock_id: lockId });
+  const tx = await withRetry(() => contractClient(config).get_lock({ lock_id: lockId }));
   if (tx.result.isErr()) {
     const error = contractError(tx.result.unwrapErr().message);
     if (error.contractError === "LockNotFound") return null;
@@ -262,7 +276,9 @@ function toPayee(raw: RawPayee): Payee {
  */
 export async function getPayee(config: KinlockConfig, payeeId: Hash32): Promise<Payee | null> {
   checkHash(payeeId, "payeeId");
-  const tx = await contractClient(config).get_payee({ payee_id: bytes32(payeeId) });
+  const tx = await withRetry(() =>
+    contractClient(config).get_payee({ payee_id: bytes32(payeeId) }),
+  );
   if (tx.result.isErr()) {
     const error = contractError(tx.result.unwrapErr().message);
     if (error.contractError === "PayeeNotFound") return null;
