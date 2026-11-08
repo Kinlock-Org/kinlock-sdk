@@ -191,6 +191,59 @@ describe("createLock", () => {
     });
   });
 
+  it("reports a post-submission timeout as TX_PENDING with txHash from sendTransactionResponse", async () => {
+    const pendingTx = {
+      result: new Ok(9n),
+      sendTransactionResponse: { hash: "ab".repeat(32) },
+      signAndSend: vi.fn(async () => {
+        throw new Error("TransactionStillPending: Waited 10 seconds for transaction to complete");
+      }),
+    };
+    methods.create_lock.mockResolvedValue(pendingTx);
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toBeInstanceOf(KinlockError);
+    expect(error).toMatchObject({
+      code: "TX_PENDING",
+      txHash: "ab".repeat(32),
+    });
+  });
+
+  it("reports a post-submission timeout as TX_PENDING with txHash from tx.hash", async () => {
+    const pendingTx = {
+      result: new Ok(9n),
+      hash: "cd".repeat(32),
+      signAndSend: vi.fn(async () => {
+        throw new Error("TransactionStillPending");
+      }),
+    };
+    methods.create_lock.mockResolvedValue(pendingTx);
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toBeInstanceOf(KinlockError);
+    expect(error).toMatchObject({
+      code: "TX_PENDING",
+      txHash: "cd".repeat(32),
+    });
+  });
+
+  it("reports a post-submission timeout as TX_PENDING with txHash from error message", async () => {
+    const hash = "ef".repeat(32);
+    const pendingTx = {
+      result: new Ok(9n),
+      signAndSend: vi.fn(async () => {
+        throw new Error(
+          `TransactionStillPending: Waited 10 seconds. Sent transaction: { "hash": "${hash}" }`,
+        );
+      }),
+    };
+    methods.create_lock.mockResolvedValue(pendingTx);
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toBeInstanceOf(KinlockError);
+    expect(error).toMatchObject({
+      code: "TX_PENDING",
+      txHash: hash,
+    });
+  });
+
   it("validates input before touching the network", async () => {
     const bad = [
       { ...params, sender: "GABC" },

@@ -106,6 +106,23 @@ async function signAndSend<T>(
   try {
     sent = await tx.signAndSend({ signTransaction: signer.signTransaction });
   } catch (e) {
+    const txAny = tx as { sendTransactionResponse?: { hash?: string }; hash?: string };
+    const errAny = e as { txHash?: string; sendTransactionResponse?: { hash?: string } };
+    const txHash =
+      txAny.sendTransactionResponse?.hash ??
+      txAny.hash ??
+      errAny.txHash ??
+      errAny.sendTransactionResponse?.hash ??
+      (e instanceof Error ? /"hash":\s*"([0-9a-fA-F]{64})"/.exec(e.message)?.[1] : undefined);
+
+    if (txHash) {
+      throw new KinlockError(
+        `transaction submitted but confirmation timed out: ${(e as Error).message}`,
+        "TX_PENDING",
+        undefined,
+        txHash,
+      );
+    }
     throw new KinlockError(`transaction failed: ${(e as Error).message}`, "TX_FAILED");
   }
   const result = sent.result;
