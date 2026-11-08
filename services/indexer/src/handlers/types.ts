@@ -67,6 +67,14 @@ export function str(event: DecodedEvent, field: string): string {
   return v;
 }
 
+export function optionalStr(event: DecodedEvent, field: string): string | null {
+  const v = event.payload[field];
+  if (v === undefined || v === null) return null;
+  if (typeof v !== "string")
+    throw new InconsistentStateError(`${event.id}: ${field} is not a string`);
+  return v;
+}
+
 export function int(event: DecodedEvent, field: string): bigint {
   const v = event.payload[field];
   if (typeof v === "bigint") return v;

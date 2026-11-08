@@ -1,0 +1,1 @@
+ALTER TABLE "locks" ALTER COLUMN "payee_id" DROP NOT NULL;

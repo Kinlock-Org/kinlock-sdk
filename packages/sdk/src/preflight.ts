@@ -149,7 +149,7 @@ const IndexerPayees = z.object({
   ),
 });
 const IndexerLocks = z.object({
-  locks: z.array(z.object({ id: z.string(), payeeId: z.string(), refHash: z.string() })),
+  locks: z.array(z.object({ id: z.string(), payeeId: z.string().nullable(), refHash: z.string() })),
 });
 
 async function indexerGet<T>(

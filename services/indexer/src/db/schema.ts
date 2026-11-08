@@ -50,7 +50,7 @@ export const locks = pgTable(
   {
     id: bigint("id", { mode: "bigint" }).primaryKey(),
     sender: text("sender").notNull(),
-    payeeId: text("payee_id").notNull(),
+    payeeId: text("payee_id"),
     /** Snapshot at creation. */
     payout: text("payout").notNull(),
     token: text("token").notNull(),

@@ -6,6 +6,7 @@ import { InconsistentStateError, UnsupportedEventError } from "../src/handlers/t
 import { DecodeError } from "../src/ingest/decode.js";
 import { GapError, type IngestDeps, ingestBatch } from "../src/ingest/poller.js";
 import type { RpcClient, RpcEvent } from "../src/rpc/client.js";
+import type { LockReader } from "../src/rpc/locks.js";
 import {
   CONTRACT_ID,
   fakeRpc,
@@ -261,5 +262,67 @@ describe("ingest: stops instead of skipping", () => {
     expect(caught).toBeDefined();
     const causeMessage = String((caught as { cause?: { message?: string } })?.cause?.message ?? "");
     expect(causeMessage).toMatch(/less than 10\^39|numeric field overflow/i);
+  });
+
+  it("ingests direct-lock LockCreated events with null or missing payee_id cleanly", async () => {
+    const { db } = await freshDb();
+    const baseLockEvent = fixture.events[3] as RpcEvent;
+
+    // Direct lock 1: payee_id field missing from map
+    const directLockMissingPayee: RpcEvent = {
+      ...baseLockEvent,
+      id: "0021711785530793984-0000000001",
+      topicJson: [{ symbol: "lock_created" }, { u64: "101" }],
+      valueJson: {
+        map: (
+          baseLockEvent.valueJson as { map: { key: { symbol: string }; val: unknown }[] }
+        ).map.filter((entry) => entry.key.symbol !== "payee_id"),
+      },
+    };
+
+    // Direct lock 2: payee_id is explicitly void / null
+    const directLockNullPayee: RpcEvent = {
+      ...baseLockEvent,
+      id: "0021711785530793984-0000000002",
+      topicJson: [{ symbol: "lock_created" }, { u64: "102" }],
+      valueJson: {
+        map: (
+          baseLockEvent.valueJson as { map: { key: { symbol: string }; val: unknown }[] }
+        ).map.map((entry) =>
+          entry.key.symbol === "payee_id" ? { key: { symbol: "payee_id" }, val: "void" } : entry,
+        ),
+      },
+    };
+
+    const mockLocks: LockReader = {
+      async tranches(lockId) {
+        if (lockId === 101n || lockId === 102n) {
+          return [
+            { amount: 50000000n, unlockAt: 1791306618n },
+            { amount: 50000000n, unlockAt: 1791306618n },
+          ];
+        }
+        return fixtureLocks().tranches(lockId);
+      },
+    };
+
+    await ingestBatch({
+      db,
+      rpc: fakeRpc([directLockMissingPayee, directLockNullPayee]),
+      locks: mockLocks,
+      contractId: CONTRACT_ID,
+      startLedger: START_LEDGER,
+      pageSize: 10,
+    });
+
+    const [lock101] = await db.select().from(locks).where(eq(locks.id, 101n));
+    expect(lock101).toBeDefined();
+    expect(lock101?.payeeId).toBeNull();
+    expect(lock101?.total).toBe(100000000n);
+
+    const [lock102] = await db.select().from(locks).where(eq(locks.id, 102n));
+    expect(lock102).toBeDefined();
+    expect(lock102?.payeeId).toBeNull();
+    expect(lock102?.total).toBe(100000000n);
   });
 });

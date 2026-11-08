@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-01 (fix/scorecard-hardening: M2-23 DONE, M2-27 DONE) |
+| **Last updated** | 2026-11-08 (fix/indexer-direct-lock-nullable-payee-id: M2-29 DONE) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 28 | 23 | 3 | 2 | 0 | 0 | 0 | 82% |
+| 3 SDK + indexer | 29 | 24 | 3 | 2 | 0 | 0 | 0 | 83% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **218** | **84** | **21** | **88** | **0** | **25** | **0** | **44%** |
+| **All** | **219** | **85** | **21** | **88** | **0** | **25** | **0** | **44%** |
 
 ---
 
@@ -294,6 +294,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-27 | Scorecard remediation, Tier 2: pin `malware-scan.yml`'s `pip install semgrep`; scope `publish.yml`'s `contents: write` token permission to the job level (`Token-Permissions` was 0/10); pin `services/indexer/Dockerfile` to `node:20-alpine@sha256:...`; resolve `GHSA-67mh-4wv8-2f99` (esbuild) via pnpm override; enrich `SECURITY.md` with vulnerability disclosure and response timelines | sdk | P2 | DONE | M2-25 | `pnpm audit` reports 0 vulnerabilities; Token-Permissions scoped; Dockerfile pinned by hash; all 180 tests pass; production build clean |
 | M2-25 | Scorecard remediation, Tier 1 (ahead of this repo's own Scorecard baseline, since `M2-23`/PR #45 hasn't merged yet): pin every `uses:` in every workflow file to a commit SHA; add `.github/dependabot.yml` for `npm` + `github-actions`; enable CodeQL default setup for `actions`+`javascript-typescript` via the Code Scanning API | sdk | P2 | DONE | — | Next Scorecard run (once `M2-23` merges) shows `Pinned-Dependencies`, `Dependency-Update-Tool`, and `SAST` all non-zero; verified against a real run, not assumed — merged; Dependabot and CodeQL both confirmed working for real |
 | M2-28 | Universal payments SDK support: update `Lock.payeeId` to `Hash32 or null`, add `recipient?: Address` to `CreateLockParams`, route `createLock` to `create_direct_lock` when `recipient` is present, update `preflight` for direct locks | sdk | P0 | DONE | M1-51 | ADR-0031; all 175 tests pass; builds clean |
+| M2-29 | Universal payments indexer support: make `locks.payee_id` nullable, export `optionalStr` helper, handle direct-lock events without `payee_id`, update preflight and app schemas | sdk | P0 | DONE | M2-28 | Direct locks ingest cleanly without throwing; `locks.payeeId` is null in DB; preflight and app schemas accept nullable `payeeId`; 181 tests pass |
 
 ---
 
@@ -542,6 +543,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-08 | `fix/indexer-direct-lock-nullable-payee-id` | sdk | M2-29 DONE (new row) | Fix PRELAUNCH_REVIEW Item 1: make `locks.payee_id` nullable across DB schema, migration 0002, event handlers (`optionalStr`), SDK preflight schema, and app indexer client schema so direct locks (ADR-0031) ingest cleanly without throwing. Added direct-lock ingest tests (181/181 passing). |
 | 2026-11-01 | `fix/scorecard-hardening` | sdk | M2-23 DONE, M2-27 DONE | OpenSSF Scorecard remediation: scoped publish.yml contents:write permission to job level (resolving 0/10 Token-Permissions); pinned Dockerfile base images to node:20-alpine@sha256:fb4cd12c...; resolved GHSA-67mh-4wv8-2f99 (esbuild) via pnpm override (pnpm audit 0 vulnerabilities); fixed bash shell keyword parsing in ci.yml:38; enriched SECURITY.md with vulnerability disclosure and response timelines. All 180 tests pass. |
 | 2026-11-01 | `docs/drips-wave-application` | sdk | no row changes | Added dedicated DRIPS_WAVE.md application and review summary document for the Drips Wave Stellar program review panel, detailing TypeScript SDK and event indexer architecture, live Railway testnet deployment, testing hygiene, issue queue, and maintainers. |
 | 2026-11-01 | `test/preflight-strkey-fuzzing-70` | sdk | no row changes | Closes #70: added comprehensive StrKey validation fuzz tests in packages/sdk/src/__tests__/preflight.test.ts covering truncated, length-overflow, invalid checksums, mixed-case, non-base32, secret-keys, multiplexed (M-address), and signed-payload addresses across sender, token, and direct recipient. All 180 tests pass. |

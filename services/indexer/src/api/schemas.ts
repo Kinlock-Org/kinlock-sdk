@@ -73,7 +73,7 @@ export interface Tranche {
 export interface Lock {
   id: string;
   sender: string;
-  payeeId: string;
+  payeeId: string | null;
   /** Payout snapshot taken at creation; never changes. */
   payout: string;
   token: string;
