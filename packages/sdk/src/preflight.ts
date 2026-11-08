@@ -136,10 +136,32 @@ async function payoutTrustline(
   const { entries } = await server(config).getLedgerEntries(key);
   const entry = entries[0];
   if (!entry) return result(check, "fail", "missing");
-  if (entry.val.type !== "trustline") throw new Error(`unexpected ledger entry ${entry.val.type}`);
-  const line = entry.val.value;
-  if ((line.flags & AUTHORIZED_FLAG) === 0) return result(check, "fail", "not_authorized");
-  const room = line.limit - line.balance;
+  const rawVal = entry.val as unknown as Record<string, unknown>;
+  const entryType =
+    typeof rawVal.type === "string"
+      ? rawVal.type
+      : typeof rawVal.switch === "function"
+        ? ((rawVal.switch as () => { name?: string })().name ?? (rawVal.switch as () => unknown)())
+        : undefined;
+  if (entryType !== "trustline") throw new Error(`unexpected ledger entry ${String(entryType)}`);
+  const lineCandidate =
+    typeof rawVal.trustLine === "function"
+      ? (rawVal.trustLine as () => unknown)()
+      : (rawVal.trustLine ?? rawVal.value);
+  if (!lineCandidate || typeof lineCandidate !== "object") {
+    throw new Error("missing trustline data in ledger entry");
+  }
+  const line = lineCandidate as Record<string, unknown>;
+  const rawFlags = typeof line.flags === "function" ? (line.flags as () => unknown)() : line.flags;
+  const rawLimit = typeof line.limit === "function" ? (line.limit as () => unknown)() : line.limit;
+  const rawBalance =
+    typeof line.balance === "function" ? (line.balance as () => unknown)() : line.balance;
+
+  const flags = Number(rawFlags);
+  const limit = BigInt(rawLimit as bigint | number | string);
+  const balance = BigInt(rawBalance as bigint | number | string);
+  if ((flags & AUTHORIZED_FLAG) === 0) return result(check, "fail", "not_authorized");
+  const room = limit - balance;
   return result(check, room >= p.total ? "pass" : "fail", room >= p.total ? "pass" : "limit");
 }
 

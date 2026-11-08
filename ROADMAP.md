@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 30 | 25 | 3 | 2 | 0 | 0 | 0 | 83% |
+| 3 SDK + indexer | 31 | 26 | 3 | 2 | 0 | 0 | 0 | 84% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **220** | **86** | **21** | **88** | **0** | **25** | **0** | **44%** |
+| **All** | **221** | **87** | **21** | **88** | **0** | **25** | **0** | **44%** |
 
 ---
 
@@ -296,6 +296,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-28 | Universal payments SDK support: update `Lock.payeeId` to `Hash32 or null`, add `recipient?: Address` to `CreateLockParams`, route `createLock` to `create_direct_lock` when `recipient` is present, update `preflight` for direct locks | sdk | P0 | DONE | M1-51 | ADR-0031; all 175 tests pass; builds clean |
 | M2-29 | Universal payments indexer support: make `locks.payee_id` nullable, export `optionalStr` helper, handle direct-lock events without `payee_id`, update preflight and app schemas | sdk | P0 | DONE | M2-28 | Direct locks ingest cleanly without throwing; `locks.payeeId` is null in DB; preflight and app schemas accept nullable `payeeId`; 181 tests pass |
 | M2-30 | Return TX_PENDING with txHash on post-submit timeout instead of generic TX_FAILED | sdk | P0 | DONE | M2-02 | KinlockError includes TX_PENDING and optional txHash; signAndSend returns TX_PENDING with txHash if submission occurred before timeout; client tests cover post-submit timeout paths; 184 tests pass; builds clean |
+| M2-31 | Preflight real XDR trustline parsing: handle LedgerEntryData.trustline union accessor and methods in checkTrustline | sdk | P0 | DONE | M2-05 | Handled in preflight.ts; unit tests verify real xdr.LedgerEntryData.trustline instances pass/fail; 185 tests pass |
 
 ---
 
@@ -544,6 +545,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-08 | `fix/preflight-xdr-trustline` | sdk | M2-31 DONE (new row) | Fix PRELAUNCH_REVIEW Item 7: handle real `xdr.LedgerEntryData` in preflight trustline check, supporting `.trustLine()`, `.flags()`, `.limit()`, and `.balance()` accessors. Added unit tests with real XDR trustline instances (185/185 tests pass, build clean). |
 | 2026-11-08 | `fix/tx-pending-timeout` | sdk | M2-30 DONE (new row) | Fix PRELAUNCH_REVIEW Item 4 (SDK): KinlockError includes error code TX_PENDING and txHash property; signAndSend returns TX_PENDING with txHash on post-submit timeout; client unit tests verify TX_PENDING with transaction hash (184/184 tests pass, build clean). |
 | 2026-11-08 | `fix/indexer-direct-lock-nullable-payee-id` | sdk | M2-29 DONE (new row) | Fix PRELAUNCH_REVIEW Item 1: make `locks.payee_id` nullable across DB schema, migration 0002, event handlers (`optionalStr`), SDK preflight schema, and app indexer client schema so direct locks (ADR-0031) ingest cleanly without throwing. Added direct-lock ingest tests (181/181 passing). |
 | 2026-11-01 | `fix/scorecard-hardening` | sdk | M2-23 DONE, M2-27 DONE | OpenSSF Scorecard remediation: scoped publish.yml contents:write permission to job level (resolving 0/10 Token-Permissions); pinned Dockerfile base images to node:20-alpine@sha256:fb4cd12c...; resolved GHSA-67mh-4wv8-2f99 (esbuild) via pnpm override (pnpm audit 0 vulnerabilities); fixed bash shell keyword parsing in ci.yml:38; enriched SECURITY.md with vulnerability disclosure and response timelines. All 180 tests pass. |
