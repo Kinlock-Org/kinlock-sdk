@@ -15,6 +15,7 @@ import {
   type EventType,
   UnsupportedEventError,
 } from "./types.js";
+import { upgradeAppliedV1, upgradeProposedV1 } from "./upgrade.js";
 
 const HANDLERS: Record<EventType, Record<number, EventHandler>> = {
   PayeeRegistered: { 1: payeeRegisteredV1 },
@@ -24,6 +25,8 @@ const HANDLERS: Record<EventType, Record<number, EventHandler>> = {
   Released: { 1: releasedV1 },
   Refunded: { 1: refundedV1 },
   Declined: { 1: declinedV1 },
+  UpgradeProposed: { 1: upgradeProposedV1 },
+  UpgradeApplied: { 1: upgradeAppliedV1 },
 };
 
 export function handlerFor(event: DecodedEvent): EventHandler {

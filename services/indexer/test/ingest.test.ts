@@ -56,6 +56,30 @@ const beforeRefund = fixture.events.slice(0, -1);
 const badRefund = (): RpcEvent =>
   JSON.parse(JSON.stringify(refundLock2).replace('"30000000"', '"30000001"'));
 
+/** An ADR-0033 admin event placed after the last fixture event (same shape the contract emits). */
+const upgradeEvent = (name: "upgrade_proposed" | "upgrade_applied", n: number): RpcEvent => {
+  const last = fixture.events[fixture.events.length - 1] as RpcEvent;
+  const fields =
+    name === "upgrade_proposed"
+      ? [
+          { key: { symbol: "executable_at" }, val: { u64: "1797000000" } },
+          { key: { symbol: "proposed_at" }, val: { u64: "1795704000" } },
+        ]
+      : [{ key: { symbol: "applied_at" }, val: { u64: "1797000000" } }];
+  return {
+    ...last,
+    ledger: last.ledger + n,
+    id: `9${last.id.slice(1, -10)}${String(n).padStart(10, "0")}`,
+    txHash: String(n).repeat(64).slice(0, 64),
+    topicJson: [{ symbol: name }, { bytes: "ab".repeat(32) }],
+    valueJson: {
+      map: [...fields, { key: { symbol: "schema_version" }, val: { u32: 1 } }].sort((a, b) =>
+        a.key.symbol.localeCompare(b.key.symbol),
+      ),
+    },
+  };
+};
+
 /** The database after one clean replay of all fixture events, for comparisons. */
 let reference: Awaited<ReturnType<typeof snapshot>>;
 
@@ -197,6 +221,19 @@ describe("ingest: stops instead of skipping", () => {
     );
     await expect(ingestBatch(deps(db, fakeRpc(bumped)))).rejects.toThrow(UnsupportedEventError);
     expect(await db.select().from(chainEvents)).toHaveLength(0);
+  });
+
+  it("records upgrade proposals and applications without touching lock or payee state", async () => {
+    const { db } = await freshDb();
+    await drain(deps(db, fakeRpc(fixture.events), 100));
+    const before = await snapshot(db);
+    const upgrades = [upgradeEvent("upgrade_proposed", 1), upgradeEvent("upgrade_applied", 2)];
+    await drain(deps(db, fakeRpc([...fixture.events, ...upgrades]), 100));
+    const after = await snapshot(db);
+    expect(after.locks).toEqual(before.locks);
+    expect(after.payees).toEqual(before.payees);
+    const types = (await db.select().from(chainEvents)).map((e) => e.eventType);
+    expect(types.slice(-2)).toEqual(["UpgradeProposed", "UpgradeApplied"]);
   });
 
   it("stops on an unknown event name", async () => {
@@ -434,6 +471,33 @@ describe("runPoller: error handling, retry backoff, and listener cleanup", () =>
     ).rejects.toThrow(InconsistentStateError);
 
     expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("re-throws DecodeError and UnsupportedEventError immediately without retrying", async () => {
+    const mystery = [{ ...fixture.events[0], topicJson: [{ symbol: "mystery" }] } as RpcEvent];
+    const future = [
+      JSON.parse(JSON.stringify(fixture.events[0]).replace('{"u32":1}', '{"u32":99}')) as RpcEvent,
+    ];
+    for (const [events, error] of [
+      [mystery, DecodeError],
+      [future, UnsupportedEventError],
+    ] as const) {
+      const { db } = await freshDb();
+      const onError = vi.fn();
+      await expect(
+        runPoller({
+          db,
+          rpc: fakeRpc(events),
+          locks: fixtureLocks(),
+          contractId: CONTRACT_ID,
+          startLedger: START_LEDGER,
+          intervalMs: 10,
+          signal: new AbortController().signal,
+          onError,
+        }),
+      ).rejects.toThrow(error);
+      expect(onError).not.toHaveBeenCalled();
+    }
   });
 
   it("does not leak abort listeners across multiple sleep cycles", async () => {

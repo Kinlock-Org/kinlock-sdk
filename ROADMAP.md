@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-09 (fix/indexer-transient-error-retry: M2-32 DONE) |
+| **Last updated** | 2026-11-09 (fix/prelaunch-hardening: M2-33 DONE, M2-34 DONE) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 32 | 27 | 3 | 2 | 0 | 0 | 0 | 84% |
+| 3 SDK + indexer | 34 | 29 | 3 | 2 | 0 | 0 | 0 | 85% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **222** | **88** | **21** | **88** | **0** | **25** | **0** | **45%** |
+| **All** | **224** | **90** | **21** | **88** | **0** | **25** | **0** | **45%** |
 
 ---
 
@@ -298,6 +298,8 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-30 | Return TX_PENDING with txHash on post-submit timeout instead of generic TX_FAILED | sdk | P0 | DONE | M2-02 | KinlockError includes TX_PENDING and optional txHash; signAndSend returns TX_PENDING with txHash if submission occurred before timeout; client tests cover post-submit timeout paths; 184 tests pass; builds clean |
 | M2-31 | Preflight real XDR trustline parsing: handle LedgerEntryData.trustline union accessor and methods in checkTrustline | sdk | P0 | DONE | M2-05 | Handled in preflight.ts; unit tests verify real xdr.LedgerEntryData.trustline instances pass/fail; 185 tests pass |
 | M2-32 | Retry transient errors in indexer poller with exponential backoff and prevent abort listener leak | sdk | P0 | DONE | M2-09 | Transient RPC/DB errors retried with backoff; GapError and InconsistentStateError rethrown immediately; abort listener leak eliminated via clean sleepWithAbort; 190 tests pass; builds clean |
+| M2-33 | `TX_PENDING` only for a real confirmation timeout: stellar-sdk's `SendFailed` (`ERROR`, `DUPLICATE`, `TRY_AGAIN_LATER`) also carries a hash in its message and must stay `TX_FAILED`; release as `@kinlock/sdk` 0.3.3 so the app picks up M2-30, M2-31 and this fix | sdk | P0 | DONE | M2-30 | `signAndSend` returns `TX_PENDING` only for `TransactionStillPending`; tests built from stellar-sdk's own error classes and messages cover pending, minified-name and all three `SendFailed` statuses; package version 0.3.3; 193 tests pass; build clean |
+| M2-34 | Indexer handles the ADR-0033 admin events (`upgrade_proposed`, `upgrade_applied`) and treats `DecodeError` / `UnsupportedEventError` as permanent (stop and alert), not transient | sdk | P0 | DONE | M2-32, M1-66 | Upgrade events are stored in `chain_events` without changing lock or payee state; the poller rethrows decode and unsupported-event errors without retrying; tests cover both; 193 tests pass; build clean |
 
 ---
 
@@ -546,6 +548,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-09 | `fix/prelaunch-hardening` | sdk | M2-33 DONE, M2-34 DONE (new rows) | Follow-up to the pre-launch review fixes after verification. `TX_PENDING` is now returned only for stellar-sdk's confirmation timeout; a rejected send stays `TX_FAILED` (it previously matched on the hash inside `SendFailed`'s message). The indexer now recognizes `UpgradeProposed`/`UpgradeApplied` (they would otherwise stall ingestion on the first `propose_upgrade`), and decode/unsupported-event errors stop the poller again instead of retrying forever. SDK version 0.3.3. `pnpm lint`, `pnpm typecheck`, `pnpm test` (193/193), `pnpm build` all run and green. Progress table refreshed with `scripts/roadmap-progress`. |
 | 2026-11-09 | `fix/indexer-transient-error-retry` | sdk | M2-32 DONE (new row) | Fix PRELAUNCH_REVIEW Item 10: retry transient errors in indexer poller with exponential backoff (min 1s, max 30s) while rethrowing GapError and InconsistentStateError immediately; prevent abort listener leak on sleepWithAbort; pass onError log warning in index.ts. Unit tests added for retry backoff and listener cleanup (190/190 tests pass, build clean). |
 | 2026-11-08 | `fix/preflight-xdr-trustline` | sdk | M2-31 DONE (new row) | Fix PRELAUNCH_REVIEW Item 7: handle real `xdr.LedgerEntryData` in preflight trustline check, supporting `.trustLine()`, `.flags()`, `.limit()`, and `.balance()` accessors. Added unit tests with real XDR trustline instances (185/185 tests pass, build clean). |
 | 2026-11-08 | `fix/tx-pending-timeout` | sdk | M2-30 DONE (new row) | Fix PRELAUNCH_REVIEW Item 4 (SDK): KinlockError includes error code TX_PENDING and txHash property; signAndSend returns TX_PENDING with txHash on post-submit timeout; client unit tests verify TX_PENDING with transaction hash (184/184 tests pass, build clean). |
