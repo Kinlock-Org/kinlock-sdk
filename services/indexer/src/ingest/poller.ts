@@ -9,7 +9,11 @@
 import type { Db } from "../db/client.js";
 import { chainEvents } from "../db/schema.js";
 import { handlerFor } from "../handlers/index.js";
-import type { DecodedEvent, TrancheSchedule } from "../handlers/types.js";
+import {
+  type DecodedEvent,
+  InconsistentStateError,
+  type TrancheSchedule,
+} from "../handlers/types.js";
 import { type EventsPage, ledgerOfCursor, type RpcClient } from "../rpc/client.js";
 import type { LockReader } from "../rpc/locks.js";
 import { readCursor, saveCursor } from "./cursor.js";
@@ -114,21 +118,53 @@ export interface PollerOptions extends IngestDeps {
   intervalMs: number;
   signal: AbortSignal;
   onBatch?: (result: BatchResult) => void;
+  onError?: (err: unknown, delayMs: number) => void;
+  minRetryDelayMs?: number;
+  maxRetryDelayMs?: number;
+}
+
+/** Sleep for `ms` or until `signal` aborts. Removes listener when done to prevent leaks. */
+export function sleepWithAbort(ms: number, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onAbort = () => {
+      if (timer !== undefined) clearTimeout(timer);
+      resolve();
+    };
+    timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 /** Ingest until aborted. Pages back-to-back while behind; waits `intervalMs` once caught up. */
 export async function runPoller(options: PollerOptions): Promise<void> {
+  const minRetryDelayMs = options.minRetryDelayMs ?? 1_000;
+  const maxRetryDelayMs = options.maxRetryDelayMs ?? 30_000;
+  let currentDelay = minRetryDelayMs;
+
   while (!options.signal.aborted) {
-    const result = await ingestBatch(options);
-    options.onBatch?.(result);
-    if (result.received === 0 && result.lastLedger >= result.latestLedger - 1) {
-      await new Promise((resolve) => {
-        const timer = setTimeout(resolve, options.intervalMs);
-        options.signal.addEventListener("abort", () => {
-          clearTimeout(timer);
-          resolve(undefined);
-        });
-      });
+    try {
+      const result = await ingestBatch(options);
+      currentDelay = minRetryDelayMs;
+      options.onBatch?.(result);
+      if (result.received === 0 && result.lastLedger >= result.latestLedger - 1) {
+        await sleepWithAbort(options.intervalMs, options.signal);
+      }
+    } catch (err) {
+      if (err instanceof GapError || err instanceof InconsistentStateError) {
+        throw err;
+      }
+      if (options.signal.aborted) {
+        break;
+      }
+      const delay = currentDelay;
+      options.onError?.(err, delay);
+      await sleepWithAbort(delay, options.signal);
+      currentDelay = Math.min(currentDelay * 2, maxRetryDelayMs);
     }
   }
 }

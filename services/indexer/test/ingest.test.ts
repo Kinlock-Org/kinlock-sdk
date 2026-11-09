@@ -1,10 +1,17 @@
+import { getEventListeners } from "node:events";
 import { eq } from "drizzle-orm";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { Db } from "../src/db/client.js";
 import { chainEvents, indexerCursor, locks, payees, tranches } from "../src/db/schema.js";
 import { InconsistentStateError, UnsupportedEventError } from "../src/handlers/types.js";
 import { DecodeError } from "../src/ingest/decode.js";
-import { GapError, type IngestDeps, ingestBatch } from "../src/ingest/poller.js";
+import {
+  GapError,
+  type IngestDeps,
+  ingestBatch,
+  runPoller,
+  sleepWithAbort,
+} from "../src/ingest/poller.js";
 import type { RpcClient, RpcEvent } from "../src/rpc/client.js";
 import type { LockReader } from "../src/rpc/locks.js";
 import {
@@ -324,5 +331,146 @@ describe("ingest: stops instead of skipping", () => {
     expect(lock102).toBeDefined();
     expect(lock102?.payeeId).toBeNull();
     expect(lock102?.total).toBe(100000000n);
+  });
+});
+
+describe("runPoller: error handling, retry backoff, and listener cleanup", () => {
+  it("retries transient errors with exponential backoff and resets on successful batch", async () => {
+    const { db } = await freshDb();
+    const controller = new AbortController();
+    let rpcAttempts = 0;
+    const baseRpc = fakeRpc(fixture.events);
+    const flakyRpc: RpcClient = {
+      async getLatestLedger() {
+        return baseRpc.getLatestLedger();
+      },
+      async getEvents(q) {
+        rpcAttempts++;
+        if (rpcAttempts === 1 || rpcAttempts === 2) {
+          throw new Error(`Transient RPC error ${rpcAttempts}`);
+        }
+        if (rpcAttempts === 3) {
+          return baseRpc.getEvents(q);
+        }
+        if (rpcAttempts === 4) {
+          throw new Error(`Transient RPC error ${rpcAttempts}`);
+        }
+        return baseRpc.getEvents(q);
+      },
+    };
+
+    const errors: { message: string; delay: number }[] = [];
+    let successfulBatches = 0;
+
+    await runPoller({
+      db,
+      rpc: flakyRpc,
+      locks: fixtureLocks(),
+      contractId: CONTRACT_ID,
+      startLedger: START_LEDGER,
+      pageSize: 3,
+      intervalMs: 10,
+      minRetryDelayMs: 10,
+      maxRetryDelayMs: 50,
+      signal: controller.signal,
+      onError: (err, delay) => {
+        errors.push({ message: (err as Error).message, delay });
+      },
+      onBatch: () => {
+        successfulBatches++;
+        if (successfulBatches === 2) {
+          controller.abort();
+        }
+      },
+    });
+
+    expect(errors).toHaveLength(3);
+    expect(errors[0]).toEqual({ message: "Transient RPC error 1", delay: 10 });
+    expect(errors[1]).toEqual({ message: "Transient RPC error 2", delay: 20 });
+    expect(errors[2]).toEqual({ message: "Transient RPC error 4", delay: 10 });
+    expect(successfulBatches).toBe(2);
+    expect(await db.select().from(chainEvents)).toHaveLength(6);
+  });
+
+  it("re-throws GapError immediately without retrying", async () => {
+    const { db } = await freshDb();
+    const controller = new AbortController();
+    const rpc = fakeRpc(fixture.events, { oldestLedger: START_LEDGER + 1 });
+    const onError = vi.fn();
+
+    await expect(
+      runPoller({
+        db,
+        rpc,
+        locks: fixtureLocks(),
+        contractId: CONTRACT_ID,
+        startLedger: START_LEDGER,
+        intervalMs: 10,
+        signal: controller.signal,
+        onError,
+      }),
+    ).rejects.toThrow(GapError);
+
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("re-throws InconsistentStateError immediately without retrying", async () => {
+    const { db } = await freshDb();
+    const controller = new AbortController();
+    await drain(deps(db, fakeRpc(beforeRefund)));
+
+    const onError = vi.fn();
+    await expect(
+      runPoller({
+        db,
+        rpc: fakeRpc([...beforeRefund, badRefund()]),
+        locks: fixtureLocks(),
+        contractId: CONTRACT_ID,
+        startLedger: START_LEDGER,
+        intervalMs: 10,
+        signal: controller.signal,
+        onError,
+      }),
+    ).rejects.toThrow(InconsistentStateError);
+
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("does not leak abort listeners across multiple sleep cycles", async () => {
+    const controller = new AbortController();
+    for (let i = 0; i < 15; i++) {
+      await sleepWithAbort(5, controller.signal);
+      expect(getEventListeners(controller.signal, "abort").length).toBe(0);
+    }
+
+    controller.abort();
+    await sleepWithAbort(100, controller.signal);
+    expect(getEventListeners(controller.signal, "abort").length).toBe(0);
+  });
+
+  it("does not leak abort listeners across multiple poller cycles", async () => {
+    const { db } = await freshDb();
+    const controller = new AbortController();
+    const emptyRpc = fakeRpc([], { latestLedger: START_LEDGER + 10 });
+    let cycles = 0;
+
+    await runPoller({
+      db,
+      rpc: emptyRpc,
+      locks: fixtureLocks(),
+      contractId: CONTRACT_ID,
+      startLedger: START_LEDGER,
+      intervalMs: 5,
+      signal: controller.signal,
+      onBatch: () => {
+        cycles++;
+        if (cycles >= 5) {
+          controller.abort();
+        }
+      },
+    });
+
+    expect(cycles).toBeGreaterThanOrEqual(5);
+    expect(getEventListeners(controller.signal, "abort").length).toBe(0);
   });
 });
