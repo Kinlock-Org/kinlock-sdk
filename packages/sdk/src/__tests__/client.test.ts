@@ -1,4 +1,4 @@
-import { Err, Ok } from "@stellar/stellar-sdk/contract";
+import { Err, Ok, SentTransaction } from "@stellar/stellar-sdk/contract";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const methods = {
@@ -189,6 +189,57 @@ describe("createLock", () => {
     await expect(createLock(config, params, signer())).rejects.toMatchObject({
       code: "TX_FAILED",
     });
+  });
+
+  // Messages built exactly as stellar-sdk's SentTransaction builds them (pinned version).
+  const sendResponse = (status: string, hash: string) =>
+    JSON.stringify({ status, hash, latestLedger: 1, latestLedgerCloseTime: "0" }, null, 2);
+
+  it("reports a confirmation timeout (TransactionStillPending) as TX_PENDING with its hash", async () => {
+    const hash = "ab".repeat(32);
+    const { TransactionStillPending } = SentTransaction.Errors;
+    methods.create_lock.mockResolvedValue({
+      result: new Ok(9n),
+      signAndSend: vi.fn(async () => {
+        throw new TransactionStillPending(
+          `Waited 30 seconds for transaction to complete, but it did not. Returning anyway. Check the transaction status manually. Sent transaction: ${sendResponse("PENDING", hash)}\nAll attempts to get the result: []`,
+        );
+      }),
+    });
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toBeInstanceOf(KinlockError);
+    expect(error).toMatchObject({ code: "TX_PENDING", txHash: hash });
+  });
+
+  it("recognizes the timeout by its message when the class name is minified", async () => {
+    const hash = "cd".repeat(32);
+    methods.create_lock.mockResolvedValue({
+      result: new Ok(9n),
+      signAndSend: vi.fn(async () => {
+        throw new Error(
+          `Waited 30 seconds for transaction to complete, but it did not. Returning anyway. Check the transaction status manually. Sent transaction: ${sendResponse("PENDING", hash)}`,
+        );
+      }),
+    });
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toMatchObject({ code: "TX_PENDING", txHash: hash });
+  });
+
+  it("keeps a rejected send (SendFailed) as TX_FAILED even though its message has a hash", async () => {
+    const { SendFailed } = SentTransaction.Errors;
+    for (const status of ["ERROR", "DUPLICATE", "TRY_AGAIN_LATER"]) {
+      methods.create_lock.mockResolvedValue({
+        result: new Ok(9n),
+        signAndSend: vi.fn(async () => {
+          throw new SendFailed(
+            `Sending the transaction to the network failed!\n${sendResponse(status, "ef".repeat(32))}`,
+          );
+        }),
+      });
+      const error = await createLock(config, params, signer()).catch((e) => e);
+      expect(error).toMatchObject({ code: "TX_FAILED" });
+      expect(error.txHash).toBeUndefined();
+    }
   });
 
   it("validates input before touching the network", async () => {

@@ -135,7 +135,7 @@ Lists escrow locks matching optional search and filter criteria. Returns locks o
 |---|---|:---:|:---:|---|
 | `id` | `string` | No | `u64` decimal | Numerical lock identifier |
 | `sender` | `string` | No | Stellar address | Address of funding sender |
-| `payeeId` | `string` | No | 64-char hex | Verified payee identifier hash |
+| `payeeId` | `string` | Yes | 64-char hex | Verified payee identifier hash; null for direct locks |
 | `payout` | `string` | No | Stellar address | Payout address snapshot taken at creation (immutable) |
 | `token` | `string` | No | Stellar address | Token SAC contract address |
 | `total` | `string` | No | Base units (scale 7) | Total locked token amount (e.g. `"100000000"` = 10.0 USDC) |

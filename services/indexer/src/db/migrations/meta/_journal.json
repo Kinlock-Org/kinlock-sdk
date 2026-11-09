@@ -15,6 +15,13 @@
       "when": 1791301769611,
       "tag": "0001_payee_attester_handle",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794154253414,
+      "tag": "0002_previous_captain_marvel",
+      "breakpoints": true
     }
   ]
 }

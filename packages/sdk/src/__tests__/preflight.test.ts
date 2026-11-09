@@ -1,4 +1,4 @@
-import { Contract, nativeToScVal, rpc } from "@stellar/stellar-sdk";
+import { Asset, Contract, Keypair, nativeToScVal, rpc, xdr } from "@stellar/stellar-sdk";
 import { Err, Ok } from "@stellar/stellar-sdk/contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -167,6 +167,93 @@ describe("preflight", () => {
     expect((await run()).payout_trustline_authorized?.messageKey).toBe(
       "preflight.payout_trustline_authorized.contract_account",
     );
+  });
+
+  it("handles real xdr.LedgerEntryData.trustline instances: pass, fail (not_authorized), fail (limit)", async () => {
+    const makeEntry = (flags: number, limit: bigint, balance: bigint) => {
+      const accountId = Keypair.fromPublicKey(PAYOUT).xdrAccountId();
+      const asset = new Asset("USDC", ISSUER).toTrustLineXdrObject();
+      const tl = new xdr.TrustLineEntry({
+        accountId,
+        asset,
+        balance,
+        limit,
+        flags,
+        ext: xdr.TrustLineEntryExt.v0(),
+      });
+      return xdr.LedgerEntryData.trustline(tl);
+    };
+
+    // Pass: authorized with sufficient room (limit 100m, balance 10m, total 10m -> room 90m >= 10m)
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: makeEntry(1, 100_000_000n, 10_000_000n),
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    let r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "pass",
+      messageKey: "preflight.payout_trustline_authorized.pass",
+    });
+
+    // Fail: not authorized (flags = 0)
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: makeEntry(0, 100_000_000n, 0n),
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "fail",
+      messageKey: "preflight.payout_trustline_authorized.not_authorized",
+    });
+
+    // Fail: limit room insufficient (room = 15m - 10m = 5m < 10m total)
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: makeEntry(1, 15_000_000n, 10_000_000n),
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "fail",
+      messageKey: "preflight.payout_trustline_authorized.limit",
+    });
+
+    // Function accessors compatibility (.trustLine(), .flags(), .limit(), .balance())
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: {
+            type: "trustline",
+            trustLine: () => ({
+              flags: () => 1,
+              limit: () => 100_000_000n,
+              balance: () => 0n,
+            }),
+          },
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "pass",
+      messageKey: "preflight.payout_trustline_authorized.pass",
+    });
   });
 
   it("warns on a payout change in the last 7 days, or one the indexer hasn't seen yet", async () => {

@@ -14,6 +14,8 @@ const EVENT_NAMES: Record<string, EventType> = {
   released: "Released",
   refunded: "Refunded",
   declined: "Declined",
+  upgrade_proposed: "UpgradeProposed",
+  upgrade_applied: "UpgradeApplied",
 };
 
 export class DecodeError extends Error {

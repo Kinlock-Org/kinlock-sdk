@@ -9,6 +9,8 @@ export const EVENT_TYPES = [
   "Released",
   "Refunded",
   "Declined",
+  "UpgradeProposed",
+  "UpgradeApplied",
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -62,6 +64,14 @@ export class UnsupportedEventError extends Error {
 /** Field accessors that fail loudly instead of writing a wrong row. */
 export function str(event: DecodedEvent, field: string): string {
   const v = event.payload[field];
+  if (typeof v !== "string")
+    throw new InconsistentStateError(`${event.id}: ${field} is not a string`);
+  return v;
+}
+
+export function optionalStr(event: DecodedEvent, field: string): string | null {
+  const v = event.payload[field];
+  if (v === undefined || v === null) return null;
   if (typeof v !== "string")
     throw new InconsistentStateError(`${event.id}: ${field} is not a string`);
   return v;
