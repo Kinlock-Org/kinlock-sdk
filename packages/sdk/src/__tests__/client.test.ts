@@ -1,4 +1,4 @@
-import { Err, Ok } from "@stellar/stellar-sdk/contract";
+import { Err, Ok, SentTransaction } from "@stellar/stellar-sdk/contract";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const methods = {
@@ -191,57 +191,55 @@ describe("createLock", () => {
     });
   });
 
-  it("reports a post-submission timeout as TX_PENDING with txHash from sendTransactionResponse", async () => {
-    const pendingTx = {
+  // Messages built exactly as stellar-sdk's SentTransaction builds them (pinned version).
+  const sendResponse = (status: string, hash: string) =>
+    JSON.stringify({ status, hash, latestLedger: 1, latestLedgerCloseTime: "0" }, null, 2);
+
+  it("reports a confirmation timeout (TransactionStillPending) as TX_PENDING with its hash", async () => {
+    const hash = "ab".repeat(32);
+    const { TransactionStillPending } = SentTransaction.Errors;
+    methods.create_lock.mockResolvedValue({
       result: new Ok(9n),
-      sendTransactionResponse: { hash: "ab".repeat(32) },
       signAndSend: vi.fn(async () => {
-        throw new Error("TransactionStillPending: Waited 10 seconds for transaction to complete");
+        throw new TransactionStillPending(
+          `Waited 30 seconds for transaction to complete, but it did not. Returning anyway. Check the transaction status manually. Sent transaction: ${sendResponse("PENDING", hash)}\nAll attempts to get the result: []`,
+        );
       }),
-    };
-    methods.create_lock.mockResolvedValue(pendingTx);
+    });
     const error = await createLock(config, params, signer()).catch((e) => e);
     expect(error).toBeInstanceOf(KinlockError);
-    expect(error).toMatchObject({
-      code: "TX_PENDING",
-      txHash: "ab".repeat(32),
-    });
+    expect(error).toMatchObject({ code: "TX_PENDING", txHash: hash });
   });
 
-  it("reports a post-submission timeout as TX_PENDING with txHash from tx.hash", async () => {
-    const pendingTx = {
-      result: new Ok(9n),
-      hash: "cd".repeat(32),
-      signAndSend: vi.fn(async () => {
-        throw new Error("TransactionStillPending");
-      }),
-    };
-    methods.create_lock.mockResolvedValue(pendingTx);
-    const error = await createLock(config, params, signer()).catch((e) => e);
-    expect(error).toBeInstanceOf(KinlockError);
-    expect(error).toMatchObject({
-      code: "TX_PENDING",
-      txHash: "cd".repeat(32),
-    });
-  });
-
-  it("reports a post-submission timeout as TX_PENDING with txHash from error message", async () => {
-    const hash = "ef".repeat(32);
-    const pendingTx = {
+  it("recognizes the timeout by its message when the class name is minified", async () => {
+    const hash = "cd".repeat(32);
+    methods.create_lock.mockResolvedValue({
       result: new Ok(9n),
       signAndSend: vi.fn(async () => {
         throw new Error(
-          `TransactionStillPending: Waited 10 seconds. Sent transaction: { "hash": "${hash}" }`,
+          `Waited 30 seconds for transaction to complete, but it did not. Returning anyway. Check the transaction status manually. Sent transaction: ${sendResponse("PENDING", hash)}`,
         );
       }),
-    };
-    methods.create_lock.mockResolvedValue(pendingTx);
-    const error = await createLock(config, params, signer()).catch((e) => e);
-    expect(error).toBeInstanceOf(KinlockError);
-    expect(error).toMatchObject({
-      code: "TX_PENDING",
-      txHash: hash,
     });
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toMatchObject({ code: "TX_PENDING", txHash: hash });
+  });
+
+  it("keeps a rejected send (SendFailed) as TX_FAILED even though its message has a hash", async () => {
+    const { SendFailed } = SentTransaction.Errors;
+    for (const status of ["ERROR", "DUPLICATE", "TRY_AGAIN_LATER"]) {
+      methods.create_lock.mockResolvedValue({
+        result: new Ok(9n),
+        signAndSend: vi.fn(async () => {
+          throw new SendFailed(
+            `Sending the transaction to the network failed!\n${sendResponse(status, "ef".repeat(32))}`,
+          );
+        }),
+      });
+      const error = await createLock(config, params, signer()).catch((e) => e);
+      expect(error).toMatchObject({ code: "TX_FAILED" });
+      expect(error.txHash).toBeUndefined();
+    }
   });
 
   it("validates input before touching the network", async () => {
