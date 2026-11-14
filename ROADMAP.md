@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-09 (fix/prelaunch-hardening: M2-33 DONE, M2-34 DONE) |
+| **Last updated** | 2026-11-14 (feat/indexer-backfill-cli-71: M2-16 IN PROGRESS) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -548,6 +548,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-11-14 | `feat/indexer-backfill-cli-71` | sdk | M2-16 IN PROGRESS (H-20 referenced) | Closes #71: added `services/indexer/src/cli/backfill.ts` (`parseBackfillArgs` and `runBackfill`) supporting `--start-ledger` and `--batch-size` to reset the persisted cursor and idempotently replay Soroban contract events from the deployment ledger without duplicating rows, plus PGlite integration tests in `services/indexer/test/backfill.test.ts`. |
 | 2026-11-09 | `fix/prelaunch-hardening` | sdk | M2-33 DONE, M2-34 DONE (new rows) | Follow-up to the pre-launch review fixes after verification. `TX_PENDING` is now returned only for stellar-sdk's confirmation timeout; a rejected send stays `TX_FAILED` (it previously matched on the hash inside `SendFailed`'s message). The indexer now recognizes `UpgradeProposed`/`UpgradeApplied` (they would otherwise stall ingestion on the first `propose_upgrade`), and decode/unsupported-event errors stop the poller again instead of retrying forever. SDK version 0.3.3. `pnpm lint`, `pnpm typecheck`, `pnpm test` (193/193), `pnpm build` all run and green. Progress table refreshed with `scripts/roadmap-progress`. |
 | 2026-11-09 | `fix/indexer-transient-error-retry` | sdk | M2-32 DONE (new row) | Fix PRELAUNCH_REVIEW Item 10: retry transient errors in indexer poller with exponential backoff (min 1s, max 30s) while rethrowing GapError and InconsistentStateError immediately; prevent abort listener leak on sleepWithAbort; pass onError log warning in index.ts. Unit tests added for retry backoff and listener cleanup (190/190 tests pass, build clean). |
 | 2026-11-08 | `fix/preflight-xdr-trustline` | sdk | M2-31 DONE (new row) | Fix PRELAUNCH_REVIEW Item 7: handle real `xdr.LedgerEntryData` in preflight trustline check, supporting `.trustLine()`, `.flags()`, `.limit()`, and `.balance()` accessors. Added unit tests with real XDR trustline instances (185/185 tests pass, build clean). |
