@@ -59,6 +59,7 @@ const poller = runPoller({
     if (r.received > 0) log.info(r, "batch ingested");
     if (r.stored > 0) void joinRegistry(); // a new payee shows its name without waiting
   },
+  onError: (err, delayMs) => log.warn({ err, delayMs }, "transient ingest error; retrying"),
 });
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {

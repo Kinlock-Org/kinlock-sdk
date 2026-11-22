@@ -46,7 +46,9 @@ export interface Signer {
 export interface CreateLockParams {
   sender: Address;
   token: Address;
-  payeeId: Hash32;
+  /** Pass either a registered payeeId OR a direct recipient address */
+  payeeId?: Hash32;
+  recipient?: Address;
   tranches: TrancheInput[];
   refHash: Hash32;
   /** Unix seconds. */
@@ -94,6 +96,20 @@ function contractError(message: string): KinlockError {
   return new KinlockError(message, "CONTRACT_ERROR", name);
 }
 
+/**
+ * stellar-sdk's `SentTransaction` throws `TransactionStillPendingError` when it stops polling
+ * before the transaction is confirmed. Class names can be minified in app bundles, and the
+ * bindings may load their own stellar-sdk copy (so `instanceof` is unreliable); the message
+ * prefix is fixed by the pinned stellar-sdk version.
+ */
+function isStillPending(e: unknown): boolean {
+  if (!(e instanceof Error)) return false;
+  return (
+    e.constructor.name === "TransactionStillPendingError" ||
+    /^Waited \d+ seconds for transaction to complete, but it did not\./.test(e.message)
+  );
+}
+
 async function signAndSend<T>(
   tx: AssembledTransaction<Result<T>>,
   signer: Signer,
@@ -104,6 +120,21 @@ async function signAndSend<T>(
   try {
     sent = await tx.signAndSend({ signTransaction: signer.signTransaction });
   } catch (e) {
+    // Only a confirmation timeout means "submitted, outcome unknown". A send that the network
+    // rejected (SendFailed: ERROR, DUPLICATE, TRY_AGAIN_LATER) also carries a hash in its
+    // message, but it definitely did not land, so it must stay TX_FAILED.
+    const txHash = isStillPending(e)
+      ? /"hash":\s*"([0-9a-fA-F]{64})"/.exec((e as Error).message)?.[1]
+      : undefined;
+
+    if (txHash) {
+      throw new KinlockError(
+        `transaction submitted but confirmation timed out: ${(e as Error).message}`,
+        "TX_PENDING",
+        undefined,
+        txHash,
+      );
+    }
     throw new KinlockError(`transaction failed: ${(e as Error).message}`, "TX_FAILED");
   }
   const result = sent.result;
@@ -120,7 +151,7 @@ function toLock(raw: RawLock): Lock {
   return {
     id: raw.id,
     sender: raw.sender,
-    payeeId: hex(raw.payee_id),
+    payeeId: raw.payee_id ? hex(raw.payee_id) : null,
     payout: raw.payout,
     token: raw.token,
     total: raw.total,
@@ -145,7 +176,13 @@ export async function createLock(
 ): Promise<{ lockId: bigint; txHash: string }> {
   checkAddress(params.sender, "sender");
   checkAddress(params.token, "token");
-  checkHash(params.payeeId, "payeeId");
+  if (params.payeeId) {
+    checkHash(params.payeeId, "payeeId");
+  } else if (params.recipient) {
+    checkAddress(params.recipient, "recipient");
+  } else {
+    throw invalid("either payeeId or recipient is required");
+  }
   checkHash(params.refHash, "refHash");
   checkU64(params.expiresAt, "expiresAt");
   if (params.sender !== signer.address) throw invalid("the signer must be the sender");
@@ -156,7 +193,23 @@ export async function createLock(
     }
     checkU64(t.unlockAt, `tranche ${i} unlockAt`);
   }
-  const tx = await contractClient(config, signer.address).create_lock({
+  const client = contractClient(config, signer.address);
+  if (params.recipient) {
+    const tx = await client.create_direct_lock({
+      sender: params.sender,
+      token: params.token,
+      recipient: params.recipient,
+      tranches: params.tranches.map((t) => ({ amount: t.amount, unlock_at: t.unlockAt })),
+      ref_hash: bytes32(params.refHash),
+      expires_at: params.expiresAt,
+    });
+    const { value, txHash } = await signAndSend(tx, signer);
+    return { lockId: value, txHash };
+  }
+  if (!params.payeeId) {
+    throw new KinlockError("createLock requires either recipient or payeeId", "INVALID_INPUT");
+  }
+  const tx = await client.create_lock({
     sender: params.sender,
     token: params.token,
     payee_id: bytes32(params.payeeId),

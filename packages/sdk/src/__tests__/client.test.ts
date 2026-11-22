@@ -1,10 +1,11 @@
-import { Err, Ok } from "@stellar/stellar-sdk/contract";
+import { Err, Ok, SentTransaction } from "@stellar/stellar-sdk/contract";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const methods = {
   get_lock: vi.fn(),
   get_payee: vi.fn(),
   create_lock: vi.fn(),
+  create_direct_lock: vi.fn(),
   release: vi.fn(),
   refund: vi.fn(),
   decline: vi.fn(),
@@ -148,6 +149,32 @@ describe("createLock", () => {
     });
   });
 
+  it("simulates and signs create_direct_lock when recipient is passed", async () => {
+    const t = tx(new Ok(10n), { result: new Ok(10n), hash: "cd".repeat(32) });
+    methods.create_direct_lock.mockResolvedValue(t);
+    const directParams = {
+      sender: SENDER,
+      token: USDC,
+      recipient: PAYOUT,
+      tranches: [{ amount: 10000000n, unlockAt: 1n }],
+      refHash: H2,
+      expiresAt: 1791306618n,
+    };
+    const s = signer();
+    expect(await createLock(config, directParams, s)).toEqual({
+      lockId: 10n,
+      txHash: "cd".repeat(32),
+    });
+    expect(methods.create_direct_lock).toHaveBeenCalledWith({
+      sender: SENDER,
+      token: USDC,
+      recipient: PAYOUT,
+      tranches: [{ amount: 10000000n, unlock_at: 1n }],
+      ref_hash: Buffer.from(H2, "hex"),
+      expires_at: 1791306618n,
+    });
+  });
+
   it("stops at a simulation error without asking the wallet to sign", async () => {
     const t = tx(new Err({ message: "PayeeNotActive: the payee is not Active." }));
     methods.create_lock.mockResolvedValue(t);
@@ -162,6 +189,57 @@ describe("createLock", () => {
     await expect(createLock(config, params, signer())).rejects.toMatchObject({
       code: "TX_FAILED",
     });
+  });
+
+  // Messages built exactly as stellar-sdk's SentTransaction builds them (pinned version).
+  const sendResponse = (status: string, hash: string) =>
+    JSON.stringify({ status, hash, latestLedger: 1, latestLedgerCloseTime: "0" }, null, 2);
+
+  it("reports a confirmation timeout (TransactionStillPending) as TX_PENDING with its hash", async () => {
+    const hash = "ab".repeat(32);
+    const { TransactionStillPending } = SentTransaction.Errors;
+    methods.create_lock.mockResolvedValue({
+      result: new Ok(9n),
+      signAndSend: vi.fn(async () => {
+        throw new TransactionStillPending(
+          `Waited 30 seconds for transaction to complete, but it did not. Returning anyway. Check the transaction status manually. Sent transaction: ${sendResponse("PENDING", hash)}\nAll attempts to get the result: []`,
+        );
+      }),
+    });
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toBeInstanceOf(KinlockError);
+    expect(error).toMatchObject({ code: "TX_PENDING", txHash: hash });
+  });
+
+  it("recognizes the timeout by its message when the class name is minified", async () => {
+    const hash = "cd".repeat(32);
+    methods.create_lock.mockResolvedValue({
+      result: new Ok(9n),
+      signAndSend: vi.fn(async () => {
+        throw new Error(
+          `Waited 30 seconds for transaction to complete, but it did not. Returning anyway. Check the transaction status manually. Sent transaction: ${sendResponse("PENDING", hash)}`,
+        );
+      }),
+    });
+    const error = await createLock(config, params, signer()).catch((e) => e);
+    expect(error).toMatchObject({ code: "TX_PENDING", txHash: hash });
+  });
+
+  it("keeps a rejected send (SendFailed) as TX_FAILED even though its message has a hash", async () => {
+    const { SendFailed } = SentTransaction.Errors;
+    for (const status of ["ERROR", "DUPLICATE", "TRY_AGAIN_LATER"]) {
+      methods.create_lock.mockResolvedValue({
+        result: new Ok(9n),
+        signAndSend: vi.fn(async () => {
+          throw new SendFailed(
+            `Sending the transaction to the network failed!\n${sendResponse(status, "ef".repeat(32))}`,
+          );
+        }),
+      });
+      const error = await createLock(config, params, signer()).catch((e) => e);
+      expect(error).toMatchObject({ code: "TX_FAILED" });
+      expect(error.txHash).toBeUndefined();
+    }
   });
 
   it("validates input before touching the network", async () => {

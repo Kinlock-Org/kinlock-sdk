@@ -50,7 +50,8 @@ export interface PreflightResult {
 export interface PreflightParams {
   sender: Address;
   token: Address;
-  payeeId: Hash32;
+  payeeId?: Hash32;
+  recipient?: Address;
   total: bigint;
   refHash: Hash32;
 }
@@ -135,10 +136,32 @@ async function payoutTrustline(
   const { entries } = await server(config).getLedgerEntries(key);
   const entry = entries[0];
   if (!entry) return result(check, "fail", "missing");
-  if (entry.val.type !== "trustline") throw new Error(`unexpected ledger entry ${entry.val.type}`);
-  const line = entry.val.value;
-  if ((line.flags & AUTHORIZED_FLAG) === 0) return result(check, "fail", "not_authorized");
-  const room = line.limit - line.balance;
+  const rawVal = entry.val as unknown as Record<string, unknown>;
+  const entryType =
+    typeof rawVal.type === "string"
+      ? rawVal.type
+      : typeof rawVal.switch === "function"
+        ? ((rawVal.switch as () => { name?: string })().name ?? (rawVal.switch as () => unknown)())
+        : undefined;
+  if (entryType !== "trustline") throw new Error(`unexpected ledger entry ${String(entryType)}`);
+  const lineCandidate =
+    typeof rawVal.trustLine === "function"
+      ? (rawVal.trustLine as () => unknown)()
+      : (rawVal.trustLine ?? rawVal.value);
+  if (!lineCandidate || typeof lineCandidate !== "object") {
+    throw new Error("missing trustline data in ledger entry");
+  }
+  const line = lineCandidate as Record<string, unknown>;
+  const rawFlags = typeof line.flags === "function" ? (line.flags as () => unknown)() : line.flags;
+  const rawLimit = typeof line.limit === "function" ? (line.limit as () => unknown)() : line.limit;
+  const rawBalance =
+    typeof line.balance === "function" ? (line.balance as () => unknown)() : line.balance;
+
+  const flags = Number(rawFlags);
+  const limit = BigInt(rawLimit as bigint | number | string);
+  const balance = BigInt(rawBalance as bigint | number | string);
+  if ((flags & AUTHORIZED_FLAG) === 0) return result(check, "fail", "not_authorized");
+  const room = limit - balance;
   return result(check, room >= p.total ? "pass" : "fail", room >= p.total ? "pass" : "limit");
 }
 
@@ -148,7 +171,7 @@ const IndexerPayees = z.object({
   ),
 });
 const IndexerLocks = z.object({
-  locks: z.array(z.object({ id: z.string(), payeeId: z.string(), refHash: z.string() })),
+  locks: z.array(z.object({ id: z.string(), payeeId: z.string().nullable(), refHash: z.string() })),
 });
 
 async function indexerGet<T>(
@@ -208,12 +231,16 @@ function checkParams(p: PreflightParams): void {
       throw bad(`${field} is not a valid Stellar address`);
     }
   }
-  for (const [field, value] of [
-    ["payeeId", p.payeeId],
-    ["refHash", p.refHash],
-  ] as const) {
-    if (!/^[0-9a-f]{64}$/.test(value)) throw bad(`${field} must be 32 bytes as lowercase hex`);
+  if (p.recipient !== undefined) {
+    if (!StrKey.isValidEd25519PublicKey(p.recipient) && !StrKey.isValidContract(p.recipient)) {
+      throw bad("recipient is not a valid Stellar address");
+    }
+  } else if (p.payeeId !== undefined) {
+    if (!/^[0-9a-f]{64}$/.test(p.payeeId)) throw bad("payeeId must be 32 bytes as lowercase hex");
+  } else {
+    throw bad("either payeeId or recipient must be provided");
   }
+  if (!/^[0-9a-f]{64}$/.test(p.refHash)) throw bad("refHash must be 32 bytes as lowercase hex");
   if (typeof p.total !== "bigint" || p.total <= 0n) throw bad("total must be a positive bigint");
 }
 
@@ -237,40 +264,49 @@ export async function preflight(
 ): Promise<PreflightResult[]> {
   checkParams(params);
   // The payee read feeds three checks (status, trustline, payout change).
-  let payout: Address | undefined;
-  const payeeActive = await settle("payee_active", async () => {
-    const tx = await new Client({
-      contractId: config.contractId,
-      networkPassphrase: config.networkPassphrase,
-      rpcUrl: config.rpcUrl,
-      allowHttp: config.allowHttp ?? false,
-    }).get_payee({ payee_id: Buffer.from(params.payeeId, "hex") });
-    if (tx.result.isErr()) {
-      const name = tx.result.unwrapErr().message.split(":")[0];
-      return result(
-        "payee_active",
-        name === "PayeeNotFound" ? "fail" : "unknown",
-        name === "PayeeNotFound" ? "not_found" : undefined,
-      );
-    }
-    const payee = tx.result.unwrap();
-    payout = payee.payout;
-    return result(
-      "payee_active",
-      payee.status.tag === "Active" ? "pass" : "fail",
-      payee.status.tag === "Active" ? "pass" : payee.status.tag.toLowerCase(),
-    );
-  });
+  let payout: Address | undefined = params.recipient;
+  const payeeActive = params.recipient
+    ? Promise.resolve(result("payee_active", "pass"))
+    : await settle("payee_active", async () => {
+        if (!params.payeeId) {
+          return result("payee_active", "fail", "not_found");
+        }
+        const payeeId = params.payeeId;
+        const tx = await new Client({
+          contractId: config.contractId,
+          networkPassphrase: config.networkPassphrase,
+          rpcUrl: config.rpcUrl,
+          allowHttp: config.allowHttp ?? false,
+        }).get_payee({ payee_id: Buffer.from(payeeId, "hex") });
+        if (tx.result.isErr()) {
+          const name = tx.result.unwrapErr().message.split(":")[0];
+          return result(
+            "payee_active",
+            name === "PayeeNotFound" ? "fail" : "unknown",
+            name === "PayeeNotFound" ? "not_found" : undefined,
+          );
+        }
+        const payee = tx.result.unwrap();
+        payout = payee.payout;
+        return result(
+          "payee_active",
+          payee.status.tag === "Active" ? "pass" : "fail",
+          payee.status.tag === "Active" ? "pass" : payee.status.tag.toLowerCase(),
+        );
+      });
   const withPayout = (check: PreflightCheck, run: (payout: Address) => Promise<PreflightResult>) =>
     settle(check, () =>
       payout ? run(payout) : Promise.resolve(result(check, "unknown", "no_payee")),
     );
 
-  const [balance, payoutChange, duplicate, trustline] = await Promise.all([
+  const [balance, activeResult, payoutChange, duplicate, trustline] = await Promise.all([
     settle("sender_balance", () => senderBalance(config, params)),
-    withPayout("recent_payout_change", (po) => recentPayoutChange(config, params, po, now)),
+    payeeActive,
+    params.recipient
+      ? Promise.resolve(result("recent_payout_change", "pass"))
+      : withPayout("recent_payout_change", (po) => recentPayoutChange(config, params, po, now)),
     settle("duplicate_ref_hash", () => duplicateRefHash(config, params)),
     withPayout("payout_trustline_authorized", (po) => payoutTrustline(config, params, po)),
   ]);
-  return [balance, payeeActive, payoutChange, duplicate, trustline];
+  return [balance, activeResult, payoutChange, duplicate, trustline];
 }

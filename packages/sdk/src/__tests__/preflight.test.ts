@@ -1,4 +1,4 @@
-import { Contract, nativeToScVal, rpc } from "@stellar/stellar-sdk";
+import { Asset, Contract, Keypair, nativeToScVal, rpc, xdr } from "@stellar/stellar-sdk";
 import { Err, Ok } from "@stellar/stellar-sdk/contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -169,6 +169,93 @@ describe("preflight", () => {
     );
   });
 
+  it("handles real xdr.LedgerEntryData.trustline instances: pass, fail (not_authorized), fail (limit)", async () => {
+    const makeEntry = (flags: number, limit: bigint, balance: bigint) => {
+      const accountId = Keypair.fromPublicKey(PAYOUT).xdrAccountId();
+      const asset = new Asset("USDC", ISSUER).toTrustLineXdrObject();
+      const tl = new xdr.TrustLineEntry({
+        accountId,
+        asset,
+        balance,
+        limit,
+        flags,
+        ext: xdr.TrustLineEntryExt.v0(),
+      });
+      return xdr.LedgerEntryData.trustline(tl);
+    };
+
+    // Pass: authorized with sufficient room (limit 100m, balance 10m, total 10m -> room 90m >= 10m)
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: makeEntry(1, 100_000_000n, 10_000_000n),
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    let r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "pass",
+      messageKey: "preflight.payout_trustline_authorized.pass",
+    });
+
+    // Fail: not authorized (flags = 0)
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: makeEntry(0, 100_000_000n, 0n),
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "fail",
+      messageKey: "preflight.payout_trustline_authorized.not_authorized",
+    });
+
+    // Fail: limit room insufficient (room = 15m - 10m = 5m < 10m total)
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: makeEntry(1, 15_000_000n, 10_000_000n),
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "fail",
+      messageKey: "preflight.payout_trustline_authorized.limit",
+    });
+
+    // Function accessors compatibility (.trustLine(), .flags(), .limit(), .balance())
+    vi.spyOn(rpc.Server.prototype, "getLedgerEntries").mockResolvedValueOnce({
+      latestLedger: 1,
+      entries: [
+        {
+          key: {} as unknown as xdr.LedgerKey,
+          val: {
+            type: "trustline",
+            trustLine: () => ({
+              flags: () => 1,
+              limit: () => 100_000_000n,
+              balance: () => 0n,
+            }),
+          },
+        } as unknown as rpc.Api.LedgerEntryResult,
+      ],
+    });
+    r = await run();
+    expect(r.payout_trustline_authorized).toMatchObject({
+      status: "pass",
+      messageKey: "preflight.payout_trustline_authorized.pass",
+    });
+  });
+
   it("warns on a payout change in the last 7 days, or one the indexer hasn't seen yet", async () => {
     world.indexerPayees = [{ payeeId: PAYEE, payout: PAYOUT, payoutUpdatedAt: iso(2 * DAY) }];
     expect((await run()).recent_payout_change).toMatchObject({ status: "fail", severity: "warn" });
@@ -223,6 +310,58 @@ describe("preflight", () => {
     ]) {
       await expect(preflight(config, { ...params, ...bad }, NOW)).rejects.toMatchObject({
         code: "INVALID_INPUT",
+      });
+    }
+  });
+
+  it("fuzzes and rejects malformed Stellar StrKeys for sender, token, and recipient", async () => {
+    const malformedAddresses = [
+      // Truncated (short length)
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH",
+      "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAM",
+      // Too long
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH3A",
+      // Invalid checksum (corrupted last character)
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH4",
+      "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMB",
+      // Lowercase / mixed-case
+      "gbbui4n57s3tbuztukqpkwy5dert2zhqn4llqz747w7cd5hu3fghwdh3",
+      "cbieltk6ybzju5up2wwqeucyklpu6aunz2bq4wwfeie3uscihmxqdama",
+      // Invalid base32 chars ('8', '9', '0', '1' in non-standard positions)
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH8",
+      "GBBUI4N57S3TBUZTUKQPKWY5DERT2ZHQN4LLQZ747W7CD5HU3FGHWDH9",
+      // Unsupported key types: Secret seed (S-key)
+      "SBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      // Multiplexed account (M-address, starts with M)
+      "MAAAAAAAAAAAAAB7BQ2L7E5NBWMXDUCMZS5KGBGQBDT7UV5JOWUTDDQQFDNXAOQAAAAAAAAAAAC2K",
+      // Signed payload account (starts with P)
+      "PAAAAAAAAAAAAAB7BQ2L7E5NBWMXDUCMZS5KGBGQBDT7UV5JOWUTDDQQFDNXAOQAAAAAAAAAAAC2K",
+      // Random strings and empty
+      "",
+      "not-a-stellar-key",
+      "0x1234567890abcdef1234567890abcdef12345678",
+    ];
+
+    for (const badAddr of malformedAddresses) {
+      // Test bad sender
+      await expect(preflight(config, { ...params, sender: badAddr }, NOW)).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("sender is not a valid Stellar address"),
+      });
+
+      // Test bad token
+      await expect(preflight(config, { ...params, token: badAddr }, NOW)).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("token is not a valid Stellar address"),
+      });
+
+      // Test bad direct recipient
+      const { payeeId: _, ...directParams } = params;
+      await expect(
+        preflight(config, { ...directParams, recipient: badAddr }, NOW),
+      ).rejects.toMatchObject({
+        code: "INVALID_INPUT",
+        message: expect.stringContaining("recipient is not a valid Stellar address"),
       });
     }
   });
