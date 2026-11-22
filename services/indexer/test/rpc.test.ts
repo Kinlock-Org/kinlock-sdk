@@ -6,6 +6,7 @@ import {
   RpcError,
   RpcUnavailableError,
 } from "../src/rpc/client.js";
+import { contractErrorCode } from "../src/rpc/payees.js";
 import { fixture } from "./helpers/fixtures.js";
 
 const page = {
@@ -64,6 +65,32 @@ describe("rpc client", () => {
   it("reads the ledger out of a paging cursor", () => {
     expect(ledgerOfCursor("0021712232207351807-4294967295")).toBe(5055272);
     expect(ledgerOfCursor(fixture.events[0]?.id ?? "")).toBe(fixture.events[0]?.ledger);
+  });
+});
+
+describe("payee state read", () => {
+  // Recorded from a live testnet simulation of `get_payee` for an unregistered payee id.
+  const payeeNotFound =
+    'HostError: Error(Contract, #11)\n\nEvent log (newest first):\n   0: [Diagnostic Event] contract:CCSHDQ…, topics:[error, Error(Contract, #11)], data:"escalating Ok(ScErrorType::Contract) frame-exit to Err"\n';
+
+  it("reads PayeeNotFound (#11) out of a simulation failure", () => {
+    expect(contractErrorCode(payeeNotFound)).toBe(11);
+  });
+
+  it("reads the code the failure reports, not one from the diagnostic log under it", () => {
+    expect(
+      contractErrorCode(
+        "cannot pay the footprint of the transaction\n\nEvent log (newest first):\n   0: [Diagnostic Event] topics:[error, Error(Contract, #11)]\n",
+      ),
+    ).toBeUndefined();
+    expect(contractErrorCode("HostError: Error(Contract, #13)\nnoise Error(Contract, #11)\n")).toBe(
+      13,
+    );
+  });
+
+  it("has no contract code for anything else", () => {
+    expect(contractErrorCode("simulated transaction failed")).toBeUndefined();
+    expect(contractErrorCode(undefined)).toBeUndefined();
   });
 });
 

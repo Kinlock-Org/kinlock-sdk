@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Last updated** | 2026-11-09 (fix/prelaunch-hardening: M2-33 DONE, M2-34 DONE) |
+| **Last updated** | 2026-11-09 (`feat/indexer-payee-bootstrap`: added row `M2-35`, indexer seeds payee rows from chain when the event is outside RPC retention) |
 | **Docs baseline** | v0.3, worldwide scope (`PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_ESSENTIALS.md`, `AGENTS.md`, `CLAUDE.md`, `project_structure.md`) |
 | **Current phase** | Phase 0 (Foundations) → starting Phase 1 (M0 Validate) |
 | **Readiness** | See [§3](#3-progress-snapshot) |
@@ -130,7 +130,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 0 Foundations | 19 | 16 | 1 | 2 | 0 | 0 | 0 | 84% |
 | 1 M0 Validate | 17 | 1 | 6 | 10 | 0 | 0 | 0 | 6% |
 | 2 Contract + registry | 41 | 24 | 3 | 14 | 0 | 0 | 0 | 59% |
-| 3 SDK + indexer | 34 | 29 | 3 | 2 | 0 | 0 | 0 | 85% |
+| 3 SDK + indexer | 35 | 29 | 4 | 2 | 0 | 0 | 0 | 83% |
 | 4 App | 27 | 15 | 7 | 5 | 0 | 0 | 0 | 56% |
 | 5 Testnet pilot | 7 | 0 | 0 | 7 | 0 | 0 | 0 | 0% |
 | 6 Pre-mainnet features | 10 | 0 | 0 | 10 | 0 | 0 | 0 | 0% |
@@ -139,7 +139,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | 9 Conditional ramp | 9 | 0 | 0 | 0 | 0 | 9 | 0 | n/a |
 | 10 Wave + community | 10 | 5 | 1 | 4 | 0 | 0 | 0 | 50% |
 | 11 Deferred parking lot | 16 | 0 | 0 | 0 | 0 | 16 | 0 | n/a |
-| **All** | **224** | **90** | **21** | **88** | **0** | **25** | **0** | **45%** |
+| **All** | **225** | **90** | **22** | **88** | **0** | **25** | **0** | **44%** |
 
 ---
 
@@ -300,6 +300,7 @@ Readiness % = `DONE ÷ (all rows − DEFERRED − DROPPED)`. Conditional rows (P
 | M2-32 | Retry transient errors in indexer poller with exponential backoff and prevent abort listener leak | sdk | P0 | DONE | M2-09 | Transient RPC/DB errors retried with backoff; GapError and InconsistentStateError rethrown immediately; abort listener leak eliminated via clean sleepWithAbort; 190 tests pass; builds clean |
 | M2-33 | `TX_PENDING` only for a real confirmation timeout: stellar-sdk's `SendFailed` (`ERROR`, `DUPLICATE`, `TRY_AGAIN_LATER`) also carries a hash in its message and must stay `TX_FAILED`; release as `@kinlock/sdk` 0.3.3 so the app picks up M2-30, M2-31 and this fix | sdk | P0 | DONE | M2-30 | `signAndSend` returns `TX_PENDING` only for `TransactionStillPending`; tests built from stellar-sdk's own error classes and messages cover pending, minified-name and all three `SendFailed` statuses; package version 0.3.3; 193 tests pass; build clean |
 | M2-34 | Indexer handles the ADR-0033 admin events (`upgrade_proposed`, `upgrade_applied`) and treats `DecodeError` / `UnsupportedEventError` as permanent (stop and alert), not transient | sdk | P0 | DONE | M2-32, M1-66 | Upgrade events are stored in `chain_events` without changing lock or payee state; the poller rethrows decode and unsupported-event errors without retrying; tests cover both; 193 tests pass; build clean |
+| M2-35 | Indexer seeds payee rows from current chain state (`get_payee`) when the `PayeeRegistered` event is outside RPC retention, so a database that starts mid-history still lists verified payees instead of nobody. Found while standing up the free testnet deployment (`M2-18`): the deployed contract's payees were registered 2026-10-06, and measured testnet `getEvents` history starts at ledger 5,351,993 of a 5,472,952 tip (~8 days) | sdk | P1 | IN PROGRESS | M2-13, M2-18 | `/payees` returns registry payees registered before the oldest retained ledger, names joined by `meta_hash`; existing (event-derived) rows are never overwritten; a payee the contract doesn't have is reported, never invented; locks are never backfilled this way; seeding is idempotent; unit-tested against the real migrations |
 
 ---
 
@@ -548,6 +549,7 @@ Newest first. One entry per PR. Required for every contribution (see §2).
 
 | Date | PR / ref | Repo | Rows touched | Summary |
 |---|---|---|---|---|
+| 2026-10-31 | `feat/indexer-payee-bootstrap` | kinlock-sdk | M2-35 IN PROGRESS | While standing up the free testnet indexer (`M2-18`, Render free + Neon free) against contract `CCSHDQFRY…`, `/payees` came back with no named payees: the three registry payees were registered on 2026-10-06 (chain ledger time 1791285287), while `getEvents` on the public testnet RPC starts at **ledger 5,351,993** of a tip of **5,472,952** (measured today, ~8 days). Those `PayeeRegistered` events are unrecoverable from RPC, and per the gap rule the indexer correctly refuses to invent them — which left a legitimately deployed contract showing no verified payees. Added a startup seed: for every payee the registry tree names that has **no row yet**, read `get_payee` from the contract and insert what the contract reports (`src/rpc/payees.ts`, `src/registry/bootstrap.ts`, wired in `src/index.ts`). Existing rows are untouched, so the event pipeline keeps ownership of anything it has seen; a payee the contract doesn't have is returned as `skipped` with a reason, never inserted; nothing backfills locks; the registry join then binds display fields by `meta_hash` as before. `PayeeNotFound` is recognised from the simulation failure's first line only (`contractErrorCode`), because the diagnostic log below it repeats the same code even when the failure is something else. Verified by running: `npx biome check .` (0 errors), `tsc --noEmit` (clean), `pnpm -r build` (both packages), `npx vitest run` (**191 tests, 17 files, all pass**; 11 new). Test teeth proven by injecting each bug and re-running: dropping the "row already exists" guard fails 2 tests, inventing a row for an unregistered payee fails 1, and matching the contract code anywhere in the response fails 1 — each reverted after. The `get_payee` shapes the reader validates (enum variants as one-element vecs, `meta_hash` as `Uint8Array`, `registered_at`/`status_changed_at` as `u64`, `HostError: Error(Contract, #11)` for an unregistered id) were taken from live testnet simulations, not assumed. No contract, schema, migration or workflow file changed. **Open question for review:** whether this deserves an org ADR (next free number, `0031` is in flight elsewhere) or whether the `services/indexer/README.md` + `docs/API.md` §3.4 provenance notes are enough; and the README's Railway deploy section is now stale (the live host is Render) — left for the deployment PR rather than mixed into this one. |
 | 2026-11-09 | `fix/prelaunch-hardening` | sdk | M2-33 DONE, M2-34 DONE (new rows) | Follow-up to the pre-launch review fixes after verification. `TX_PENDING` is now returned only for stellar-sdk's confirmation timeout; a rejected send stays `TX_FAILED` (it previously matched on the hash inside `SendFailed`'s message). The indexer now recognizes `UpgradeProposed`/`UpgradeApplied` (they would otherwise stall ingestion on the first `propose_upgrade`), and decode/unsupported-event errors stop the poller again instead of retrying forever. SDK version 0.3.3. `pnpm lint`, `pnpm typecheck`, `pnpm test` (193/193), `pnpm build` all run and green. Progress table refreshed with `scripts/roadmap-progress`. |
 | 2026-11-09 | `fix/indexer-transient-error-retry` | sdk | M2-32 DONE (new row) | Fix PRELAUNCH_REVIEW Item 10: retry transient errors in indexer poller with exponential backoff (min 1s, max 30s) while rethrowing GapError and InconsistentStateError immediately; prevent abort listener leak on sleepWithAbort; pass onError log warning in index.ts. Unit tests added for retry backoff and listener cleanup (190/190 tests pass, build clean). |
 | 2026-11-08 | `fix/preflight-xdr-trustline` | sdk | M2-31 DONE (new row) | Fix PRELAUNCH_REVIEW Item 7: handle real `xdr.LedgerEntryData` in preflight trustline check, supporting `.trustLine()`, `.flags()`, `.limit()`, and `.balance()` accessors. Added unit tests with real XDR trustline instances (185/185 tests pass, build clean). |

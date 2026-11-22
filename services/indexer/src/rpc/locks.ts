@@ -22,7 +22,7 @@ const LockSchema = z.object({
 });
 
 // Simulation needs a well-formed source account; it is never charged or signed for.
-const SIMULATION_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+export const SIMULATION_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 export function createLockReader(
   urls: string[],
