@@ -8,7 +8,9 @@ export type KinlockErrorCode =
   /** The contract rejected the call; `contractError` holds its error name, e.g. "NotYetUnlocked". */
   | "CONTRACT_ERROR"
   /** Signing, submission, or confirmation failed (including the wallet declining). */
-  | "TX_FAILED";
+  | "TX_FAILED"
+  /** Transaction was submitted to the network but confirmation timed out; txHash is available. */
+  | "TX_PENDING";
 
 export class KinlockError extends Error {
   override name = "KinlockError";
@@ -17,6 +19,8 @@ export class KinlockError extends Error {
     readonly code: KinlockErrorCode,
     /** For CONTRACT_ERROR: the contract's error name (kinlock-contracts `errors.rs`). */
     readonly contractError?: string,
+    /** For TX_PENDING: the submitted transaction hash to track confirmation. */
+    readonly txHash?: string,
   ) {
     super(message);
   }

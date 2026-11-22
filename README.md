@@ -11,6 +11,14 @@ The TypeScript client for the `kinlock` contract (`packages/sdk`) and the event 
 
 **Try it live (testnet):** [kinlock-app.vercel.app](https://kinlock-app.vercel.app) · **Docs:** [kinlock-org.github.io](https://kinlock-org.github.io) · **Indexer:** [indexer-production-705a.up.railway.app](https://indexer-production-705a.up.railway.app) (`GET /health`)
 
+## See it in action
+
+A 25-second overview of the SDK and indexer — the typed client, the events → Postgres → list API pipeline, and the guardrails. Testnet only.
+
+<video src="media/kinlock-brag.mp4" controls width="640" poster="media/kinlock-brag-poster.jpg"></video>
+
+> If the clip doesn't play inline, download it: [media/kinlock-brag.mp4](media/kinlock-brag.mp4).
+
 ## First 15 minutes
 
 To get up and running from a fresh checkout:
@@ -89,6 +97,25 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
 Vitest runs both projects (15 test files: 9 SDK test files, 6 indexer test files against in-process Postgres via PGlite; 165 tests total as of 2026-10). Node 20, TypeScript 7, Biome for lint and format. `publish.yml` attaches a `.tgz` to a GitHub Release on any `sdk-v*` tag — packages ship as release artifacts, not through npm (ADR-0026).
+
+## Maintainers
+
+| Name | Role | GitHub | Contact |
+|---|---|---|---|
+| Adenike Ajala | Core Maintainer (Smart Contracts & Protocol) | [@abrcrmb](https://github.com/abrcrmb) | [Email](mailto:adenikeajala2018@gmail.com) |
+| Ayobami Yazar | Core Maintainer (Full-Stack & Integrations) | [@YazarAyobami](https://github.com/YazarAyobami) | [Email](mailto:Yazarayobami76@gmail.com) |
+
+## Community & Discussions
+
+- **Discussions:** [GitHub Discussions](https://github.com/Kinlock-Org/kinlock-sdk/discussions)
+- **Documentation Portal:** [kinlock-org.github.io](https://kinlock-org.github.io)
+- **Report Security Vulnerabilities:** Follow [`SECURITY.md`](SECURITY.md)
+
+## Contributors
+
+Thanks to everyone who has contributed to Kinlock!
+
+[![Contributors](https://contrib.rocks/image?repo=Kinlock-Org/kinlock-sdk)](https://github.com/Kinlock-Org/kinlock-sdk/graphs/contributors)
 
 ## Read first
 

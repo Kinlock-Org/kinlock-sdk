@@ -1,6 +1,14 @@
 /** LockCreated (all schema_versions). Tranches come from a get_lock chain read. Roadmap M2-10. */
 import { locks, tranches } from "../db/schema.js";
-import { type EventHandler, fromUnix, InconsistentStateError, int, lockKey, str } from "./types.js";
+import {
+  type EventHandler,
+  fromUnix,
+  InconsistentStateError,
+  int,
+  lockKey,
+  optionalStr,
+  str,
+} from "./types.js";
 
 export const lockCreatedV1: EventHandler = async (db, event, ctx) => {
   const id = lockKey(event);
@@ -15,7 +23,7 @@ export const lockCreatedV1: EventHandler = async (db, event, ctx) => {
   await db.insert(locks).values({
     id,
     sender: str(event, "sender"),
-    payeeId: str(event, "payee_id"),
+    payeeId: optionalStr(event, "payee_id"),
     payout: str(event, "payout"),
     token: str(event, "token"),
     total,
